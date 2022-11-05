@@ -43,6 +43,9 @@ class Controller:
         phi, phidot, phiddot, phitdot = des_traj_vals[12:16]
 
         x, y, z = act_traj_vals[0:3]
+        # x += 0.001*np.random.random(size=1)[0]
+        y += 0.001*np.random.random(size=1)[0]
+        z += + 0.01*np.random.random(size=1)[0]
         v_x, v_y, v_z = act_traj_vals[3:6]
         a_x, a_y, a_z = act_traj_vals[6:9]
         j_x, j_y, j_z = act_traj_vals[9:12]
@@ -150,7 +153,7 @@ class Controller:
         # T = accel * self.m / (np.cos(ang[0, 0]) * np.cos(ang[1, 0]))
         T = desired_state[6]
 
-        T_theta = (self.K_theta[1] * (-ang[0,1]) + self.K_theta[0] * (desired_state[2] - ang[0,0])) * self.I[0]
+        T_theta = ((self.K_theta[1] * (-ang[0,1]) + self.K_theta[0] * (desired_state[2] - ang[0,0])) * self.I[0])
         T_psi = (self.K_psi[1] * (-ang[1,1]) + self.K_psi[0] * (desired_state[3] - ang[1,0])) * self.I[1]
         T_phi = (self.K_phi[1] * ( - ang[2,1]) + self.K_phi[0] * (desired_state[4] - ang[2,0])) * self.I[2]
         # print(ang[2,1], ang[2,0])

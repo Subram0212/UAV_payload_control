@@ -15,9 +15,9 @@ vxl, vyl, vzl = sy.symbols('vxl vyl vzl', real=True)
 phi,theta,psi  = sy.symbols('phi theta psi', real=True)
 phidot,thetadot,psidot = sy.symbols('phidot thetadot psidot', real=True)
 phiddot,thetaddot,psiddot = sy.symbols('phiddot thetaddot psiddot', real=True)
-eta, zeta = sy.symbols('eta zeta', real=True)
-etadot, zetadot = sy.symbols('etadot zetadot', real=True)
-etaddot, zetaddot = sy.symbols('etaddot zetaddot', real=True)
+theta_l, phi_l = sy.symbols('theta_l phi_l', real=True)
+theta_ldot, phi_ldot = sy.symbols('theta_ldot phi_ldot', real=True)
+theta_lddot, phi_lddot = sy.symbols('theta_lddot phi_lddot', real=True)
 m,g,Ixx,Iyy,Izz = sy.symbols('m g Ixx Iyy Izz', real=True)
 K,l,b,Ax,Ay,Az = sy.symbols('K l b Ax Ay Az', real=True)
 omega1,omega2,omega3,omega4 = sy.symbols('omega1 omega2 omega3 omega4', real=True)
@@ -50,9 +50,15 @@ R_z = sy.Matrix( [
 
 R = R_z*R_y*R_x
 
+R_y_phil = sy.Matrix([
+    [cos(phi_l),  0, sin(phi_l)],
+    [0,           1,          0],
+    [-sin(phi_l),  0, cos(phi_l)]
+])
+
 
 #2) angular velocity and energy
-om_b = phidot*i +  R_x.transpose()*(thetadot*j) + R_x.transpose()*R_y.transpose()*(psidot*k)
+om_b = phidot*i + R_x.transpose()*(thetadot*j) + R_x.transpose()*R_y.transpose()*(psidot*k)
 I = sy.Matrix( [
     [Ixx, 0, 0],
     [0, Iyy, 0],

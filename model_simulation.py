@@ -6,11 +6,12 @@ from scipy.integrate import odeint
 import sys
 from controller import Controller
 
+
 sys.path.append('C:\\UIC courses\\ME 510 - Robotic Manipulators course\\Project\\quadcopter-main\\controller')
 print(sys.path)
 
 pause = 0.005
-fps = 1
+fps = 0.5
 l = 0.225  # in m
 k = 2.980*1e-6  # this is to be found via calculation
 b_drag_const = 1.140e-7  # this is to be found via calculation
@@ -50,21 +51,59 @@ Ki = np.array([1.5, 1.5, 1.5])
 Ax = 0.25
 Ay = 0.25
 Az = 0.25
+# I = np.array([Ixx, 0, 0],
+#              [0, Iyy, 0],
+#              [0, 0, Izz])
 A = np.array([Ax, Ay, Az])
-
+# t = Torque(l, k, b)
 omega0 = np.array([620, 620, 620, 620])
 omega0 = np.expand_dims(omega0, axis=1)
+# T_b = t(w)
+#
+# x0, y0, z0, vx0, vy0, vz0 = [0, 0, 0, 0, 0, 0]
+# theta0, psi0, phi0, thetadot0, psidot0, phidot0 = [0, 0, 0, 0, 0, 0]
+# X_lin_0 = np.array([x0, y0, z0, vx0, vy0, vz0], dtype='float64')
+# X_ang_0 = np.array([theta0, psi0, phi0, thetadot0, psidot0, phidot0], dtype='float64')  # Initial values
+# X_0 = np.concatenate([X_lin_0, X_ang_0])
 
 lin = LinAccel(m, k, g)
 angacc = AngAccel(I, l, k, b_drag_const)
+# xddot = np.concatenate((lin_acc, ang_acc), axis=None)  # This is a 6 x 1 vector giving the accelerations of the system
+# xddot = np.expand_dims(xddot, axis=1)
+# print(xddot)
 
-# Desired trajectory: Lemniscate
+# parms_ang = (omega, )
+# X_ang = odeint(angacc.angular_acceleration, X_ang_0, t, args=parms_ang)
+# assert X_ang.shape == (len(t), 6), f'The angular acceleration should be in len(t) x 6 shape'
+
+# parms_lin = (X_ang, omega, A)
+# X_pos = odeint(lin.linear_acceleration, X_lin_0, t, args=parms_lin)
+# assert X_pos.shape == (len(t), 6), f'The linear acceleration should be in len(t) x 6 shape'
+
+
+# Desired trajectory: Lift off + Lemniscate (Doing the midpoint trajectory)
 h = 0.005
 t0 = 0
-tN = 75
-N = int((tN-t0)/h) + 1
-t = np.linspace(t0, tN, N)
-T = t[N-1]
+t1 = 25
+tN = 100
+# N = int((tN-t0)/h) + 1
+# t = np.linspace(t0, tN, N)
+N1 = int((t1-t0)/h)
+N2 = int((tN-t1)/h) + 1
+t_lift = np.linspace(t0, t1, N1)
+t_traj = np.linspace(t1, tN, N2)
+T = t_traj[N2-1]
+
+a10 = 0
+a11 = 0
+a12 = 0
+a13 = 1280/T**3
+a14 = -7680/T**4
+a15 = 12288/T**5
+z_ref1 = a10 + a11*t_lift + a12*t_lift**2 + a13*t_lift**3 + a14*t_lift**4 + a15*t_lift**5
+z_refdot1 = a11 + 2*a12*t_lift + 3*a13*t_lift**2 + 4*a14*t_lift**3 + 5*a15*t_lift**4
+z_refddot1 = 2*a12 + 2*3*a13*t_lift + 3*4*a14*t_lift**2 + 4*5*a15*t_lift**3
+z_reftdot1 = a12 + 2*3*a13 + 2*3*4*a14*t_lift + 3*4*5*a15*t_lift**2
 
 # x_0 = 0
 # y_0 = 0.5
@@ -73,33 +112,99 @@ B = 0.5
 a = 2
 b = 1
 mpi = np.pi
+# theta = np.zeros(N)
+# thetadot = np.zeros(N)
+# psi = np.zeros(N)
+# psidot = np.zeros(N)
+
+tau = 2*mpi*((-47/81)+(640/81)*(t_traj/T)-(3200/81)*(t_traj/T)**2+(7040/81)*(t_traj/T)**3-(6400/81)*(t_traj/T)**4+(2048/81)*(t_traj/T)**5)
+taudot = 2*mpi*((640/81)*(1/T)-2*(3200/81)*(1/T)*(t_traj/T)+(7040/81)*3*(1/T)*(t_traj/T)**2-(6400/81)*4*(1/T)*(t_traj/T)**3+(2048/81)*5*(1/T)*(t_traj/T)**4)
+tauddot = 2*mpi*(-2*(3200/81)*(1/T)**2+(7040/81)*3*2*(1/T)**2*(t_traj/T)-(6400/81)*4*3*(1/T)**2*(t_traj/T)**2 + (2048/81)*5*4*(1/T)**2*(t_traj/T)**3)
+tautdot = 2*mpi*((7040/81)*3*2*(1/T)**3-(6400/81)*4*3*2*(1/T)**3*(t_traj/T) + (2048/81)*5*4*3*(1/T)**3*(t_traj/T)**2)
+
+t = np.concatenate((t_lift, t_traj))
+N = N1 + N2
+
+# tau = 2*mpi*(-15*(t_traj/T)**4+6*(t_traj/T)**5+10*(t_traj/T)**3)
+# taudot = 2*mpi*(-15*4*(1/T)*(t_traj/T)**3+6*5*(1/T)*(t_traj/T)**4+10*3*(1/T)*(t_traj/T)**2)
+# tauddot = 2*mpi*(-15*4*3*(1/T)**2*(t_traj/T)**2 + 6*5*4*(1/T)**2*(t_traj/T)**3+10*3*2*(1/T)**2*(t_traj/T))
+# tautdot = 2*mpi*(-15*4*3*2*(1/T)**3*(t_traj/T) + 6*5*4*3*(1/T)**3*(t_traj/T)**2 + 10*3*2*(1/T)**3)
+# taujdot = 2*mpi*(-15*4*3*2*(1/T)**3 + 6*5*4*3*2*(1/T)**4*(t/T))
+
+'''# Trajectory: Lemniscate'''
+# Gains that give beter tracking:
+# Kp = np.array([1.85*5, 7.55, 1.85*5])
+# Kd = np.array([0.75*10, 0.75*10, 0.75*10])
+# Kdd = np.array([1.00, 1.00, 1.00])
+# Ki = np.array([1.5*5, 1.5*5, 1.5*5])
+
+# Another set of gains for good trajectory tracking:
+# Kp = np.array([1.85*5, 7.55, 1.85*5])
+# Kd = np.array([0.75*10, 0.75*10, 0.75*5])
+# Kdd = np.array([1.00, 1.00, 1.00])
+# Ki = np.array([1.5, 1.5, 1.5])
+
 phi = np.zeros(N)
 phidot = np.zeros(N)
 phiddot = np.zeros(N)
 phitdot = np.zeros(N)
 
-tau = 2*mpi*(-15*(t/T)**4+6*(t/T)**5+10*(t/T)**3)
-taudot = 2*mpi*(-15*4*(1/T)*(t/T)**3+6*5*(1/T)*(t/T)**4+10*3*(1/T)*(t/T)**2)
-tauddot = 2*mpi*(-15*4*3*(1/T)**2*(t/T)**2 + 6*5*4*(1/T)**2*(t/T)**3+10*3*2*(1/T)**2*(t/T))
-tautdot = 2*mpi*(-15*4*3*2*(1/T)**3*(t/T) + 6*5*4*3*(1/T)**3*(t/T)**2 + 10*3*2*(1/T)**3)
-# taujdot = 2*mpi*(-15*4*3*2*(1/T)**3 + 6*5*4*3*2*(1/T)**4*(t/T))
+x_ref1 = np.zeros(N1)+0.5
+y_ref1 = np.zeros(N1)
+z_ref1 = z_ref1
+v_x1 = np.zeros(N1)
+v_y1 = np.zeros(N1)
+v_z1 = z_reftdot1
+a_x1 = np.zeros(N1)
+a_y1 = np.zeros(N1)
+a_z1 = z_refddot1
+j_x1 = np.zeros(N1)
+j_y1 = np.zeros(N1)
+j_z1 = z_reftdot1
 
-'''# Trajectory: Lemniscate'''
-x_ref = B*np.cos(b*tau)
-y_ref = A_const*np.sin(a*tau)
-z_ref = np.zeros(N)
+x_ref2 = B*np.cos(b*tau)
+y_ref2 = A_const*np.sin(a*tau)
+z_ref2 = np.zeros(N2)+2
+v_x2 = -B*b*np.sin(b*tau)*taudot
+v_y2 = A_const*a*np.cos(a*tau)*taudot
+v_z2 = np.zeros(N2)
+a_x2 = -B*b*b*np.sin(b*tau)*taudot-B*b*np.sin(b*tau)*tauddot
+a_y2 = -A_const*a*a*np.sin(a*tau)*taudot+A_const*a*np.cos(a*tau)*tauddot
+a_z2 = np.zeros(N2)
+j_x2 = -B*b*b*b*np.cos(b*tau)*taudot-B*b*b*np.sin(b*tau)*tauddot - B*b*b*np.cos(b*tau)*tauddot-B*b*np.sin(b*tau)*tautdot
+j_y2 = -A_const*a*a*a*np.cos(a*tau)*taudot-A_const*a*a*np.sin(a*tau)*tauddot - A_const*a*a*np.sin(a*tau)*tauddot + A_const*a*np.cos(a*tau)*tautdot
+j_z2 = np.zeros(N2)
+# joun_x = A_const*a*a*a*a*np.sin(a*tau)*taudot - A_const*a*a*a*np.cos(a*tau)*tauddot - A_const*a*a*a*np.cos(a*tau)*tauddot - A_const*a*a*np.sin(a*tau)*tautdot - A_const*a*a*a*np.cos(a*tau)*tauddot - A_const*a*a*np.sin(a*tau)*tautdot - A_const*a*a*np.sin(a*tau)*tautdot + A_const*a*np.cos(a*tau)*taujdot
+# joun_y = B*b*b*b*b*np.sin(b*tau)*taudot - -B*b*b*b*np.cos(b*tau)*tauddot - B*b*b*b*np.cos(b*tau)*tauddot - B*b*b*np.sin(b*tau)*tautdot + B*b*b*b*np.sin(b*tau)*tauddot - B*b*b*np.cos(b*tau)*tautdot - B*b*b*np.cos(b*tau)*tautdot - B*b*np.sin(b*tau)*taujdot
+# joun_z = np.zeros(N)
 
-v_y = A_const*a*np.cos(a*tau)*taudot
-v_x = -B*b*np.sin(b*tau)*taudot
-v_z = np.zeros(N)
-a_y = -A_const*a*a*np.sin(a*tau)*taudot+A_const*a*np.cos(a*tau)*tauddot
-a_x = -B*b*b*np.sin(b*tau)*taudot-B*b*np.sin(b*tau)*tauddot
-a_z = np.zeros(N)
-j_y = -A_const*a*a*a*np.cos(a*tau)*taudot-A_const*a*a*np.sin(a*tau)*tauddot - A_const*a*a*np.sin(a*tau)*tauddot + A_const*a*np.cos(a*tau)*tautdot
-j_x = -B*b*b*b*np.cos(b*tau)*taudot-B*b*b*np.sin(b*tau)*tauddot - B*b*b*np.cos(b*tau)*tauddot-B*b*np.sin(b*tau)*tautdot
-j_z = np.zeros(N)
+x_ref = np.concatenate((x_ref1, x_ref2))
+y_ref = np.concatenate((y_ref1, y_ref2))
+z_ref = np.concatenate((z_ref1, z_ref2))
+v_x = np.concatenate((v_x1, v_x2))
+v_y = np.concatenate((v_y1, v_y2))
+v_z = np.concatenate((v_z1, v_z2))
+a_x = np.concatenate((a_x1, a_x2))
+a_y = np.concatenate((a_y1, a_y2))
+a_z = np.concatenate((a_z1, a_z2))
+j_x = np.concatenate((j_x1, j_x2))
+j_y = np.concatenate((j_y1, j_y2))
+j_z = np.concatenate((j_z1, j_z2))
 
 '''# Trajectory: Circle'''
+# Gains that gives better tracking:
+
+# Kp = np.array([1.85*4, 8.55, 1.85*4])
+# Kd = np.array([0.75*15, 0.75*15, 0.75*15])
+# Kdd = np.array([1.00, 1.00, 1.00])
+# Ki = np.array([1.5*5, 1.5*5, 1.5*5])
+
+# Another set of good gains:
+
+# Kp = np.array([1.85*5, 7.55, 1.85*6])
+# Kd = np.array([0.75*15, 0.75*15, 0.75*15])
+# Kdd = np.array([1.00, 1.00, 1.00])
+# Ki = np.array([1.5*5, 1.5*5, 1.5*5])
 
 # x_ref = A_const*np.cos(tau)
 # y_ref = A_const*np.sin(tau)
@@ -116,6 +221,12 @@ j_z = np.zeros(N)
 # j_z = np.zeros(N)
 
 '''# Trajectory: sine curve'''
+# Gains that gives better tracking:
+
+# Kp = np.array([1.87*4.5, 10.55, 1.87*4.5])
+# Kd = np.array([0.75*15, 0.75*15, 0.75*15])
+# Kdd = np.array([1.00, 1.00, 1.00])
+# Ki = np.array([1.5*5, 1.5*5, 1.5*5])
 
 # x_ref = tau
 # y_ref = np.sin(tau)
@@ -250,7 +361,7 @@ for i in range(0,N-1):
 
 
 anim = Animation(pause, fps, m, k, g, l, b_drag_const)
-# anim.animate(t, X_POS, X_ANG)
+anim.animate(t, X_POS, X_ANG)
 
 
 fig = plt.figure()
@@ -292,13 +403,13 @@ ax4.set_aspect('equal')
 
 fig5 = plt.figure()
 ax5 = plt.subplot(411)
-plt.plot(t, tau)
+plt.plot(t_traj, tau)
 plt.subplot(412)
-plt.plot(t, taudot)
+plt.plot(t_traj, taudot)
 plt.subplot(413)
-plt.plot(t, tauddot)
+plt.plot(t_traj, tauddot)
 plt.subplot(414)
-plt.plot(t, tautdot)
+plt.plot(t_traj, tautdot)
 
 fig6 = plt.figure()
 ax6 = plt.subplot(111)

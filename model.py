@@ -1,3 +1,4 @@
+# Author prakyath 09/19/2022
 # Subramanian - Completed the angular acceleration code section and included Linear acceleration EOMs
 from typing import Any
 import numpy as np
@@ -10,7 +11,7 @@ from matplotlib import animation
 
 # Given motor speeds (omega), and angles (theta, psi, phi) -> calculate the lin acceleration in inertial frame
 
-
+np.random.seed(10)
 class LinAccel(object):
     def __init__(self, m: float, k: float, g: float) -> None:
         """
@@ -24,7 +25,7 @@ class LinAccel(object):
     def Rotation_matrix(self, X_ang) -> np.ndarray:
         """
         Get the rotation matrix for transformation from body frame to inertial frame
-        :param ang: [theta, psi, phi] in radians
+        :param X_ang: [theta, psi, phi, thetadot, psidot, phidot] in radians
         :return: numpy array
         """
         ang = np.array([X_ang[0], X_ang[1], X_ang[2]])
@@ -351,14 +352,15 @@ class Animation(LinAccel):
             new_axle_y = np.array([x, y, z]) + new_axle_y
             # print(new_axle_y)
 
-            ax = p3.Axes3D(fig)
+            ax = p3.Axes3D(fig, auto_add_to_figure=False)
+            fig.add_axes(ax)
             axle1, = ax.plot(new_axle_x[:, 0],new_axle_x[:, 1],new_axle_x[:, 2], 'ro-', linewidth=3)
             axle2, = ax.plot(new_axle_y[:, 0], new_axle_y[:, 1], new_axle_y[:, 2], 'bo-', linewidth=3)
             track, = plt.plot(x, y, z, color='black',marker='o',markersize=2)
 
             ax.set_xlim(-1, 1)
             ax.set_ylim(-1, 1)
-            ax.set_zlim(-1, 1)
+            ax.set_zlim(-1, 2.5)
             ax.view_init(azim=-72, elev=20)
 
             plt.pause(self.pause)
