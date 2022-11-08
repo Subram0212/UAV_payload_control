@@ -324,6 +324,7 @@ omega = np.array([parms.omega1, parms.omega2, parms.omega3, parms.omega4])
 OMEGA = np.zeros((len(t), 4))
 OMEGA[0] = omega
 
+
 for i in range(0, N-1):
     j = 0
     control = Controller(K_z, K_psi, K_theta, K_phi, Kp, Kd, Kdd, Ki, A, k, l, b_drag_const)
