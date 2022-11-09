@@ -39,16 +39,16 @@ class Controller:
         xd, yd, zd = des_traj_vals[0:3]
         v_xd, v_yd, v_zd = des_traj_vals[3:6]
         a_xd, a_yd, a_zd = des_traj_vals[6:9]
-        j_xd, j_yd, j_zd = des_traj_vals[9:12]
+        # j_xd, j_yd, j_zd = des_traj_vals[9:12]
         phi, phidot, phiddot, phitdot = des_traj_vals[12:16]
 
         x, y, z = act_traj_vals[0:3]
         # x += 0.001*np.random.random(size=1)[0]
-        y += 0.001*np.random.random(size=1)[0]
-        z += + 0.01*np.random.random(size=1)[0]
+        # y += 0.001*np.random.random(size=1)[0]
+        # z += + 0.01*np.random.random(size=1)[0]
         v_x, v_y, v_z = act_traj_vals[3:6]
         a_x, a_y, a_z = act_traj_vals[6:9]
-        j_x, j_y, j_z = act_traj_vals[9:12]
+        # j_x, j_y, j_z = act_traj_vals[9:12]
 
         t = t_step[1] - t_step[0]
         m = self.m
@@ -95,7 +95,7 @@ class Controller:
         # desired_state = np.concatenate(z, tpp)
         theta = np.arcsin((d_x*np.sin(phi) - d_y*np.cos(phi)) / (d_x**2 + d_y**2 + (d_z + g)**2))
         # theta = Kx*(xd - x) + Kxd*(v_xd - v_x) + Kxdd*(a_xd - a_x)
-        thetadot = (((Kx*(-x + xd) + Kxd*(-v_x + v_xd) + Kxdd*(-a_x + a_xd))*sin(phi) - (Ky*(-y + yd) + Kyd*(-v_y + v_yd) + Kydd*(-a_y + a_yd))*cos(phi))*(-(2*Kxd*(-a_x + a_xd) + 2*Kxdd*(-j_x + j_xd))*(Kx*(-x + xd) + Kxd*(-v_x + v_xd) + Kxdd*(-a_x + a_xd)) - (2*Kyd*(-a_y + a_yd) + 2*Kydd*(-j_y + j_yd))*(Ky*(-y + yd) + Kyd*(-v_y + v_yd) + Kydd*(-a_y + a_yd)) - (2*Kzd*(-a_z + a_zd) + 2*Kzdd*(-j_z + j_zd))*(Kz*(-z + zd) + Kzd*(-v_z + v_zd) + Kzdd*(-a_z + a_zd) + g))/((Kx*(-x + xd) + Kxd*(-v_x + v_xd) + Kxdd*(-a_x + a_xd))**2 + (Ky*(-y + yd) + Kyd*(-v_y + v_yd) + Kydd*(-a_y + a_yd))**2 + (Kz*(-z + zd) + Kzd*(-v_z + v_zd) + Kzdd*(-a_z + a_zd) + g)**2)**2 + ((Kxd*(-a_x + a_xd) + Kxdd*(-j_x + j_xd))*sin(phi) - (Kyd*(-a_y + a_yd) + Kydd*(-j_y + j_yd))*cos(phi) + (Kx*(-x + xd) + Kxd*(-v_x + v_xd) + Kxdd*(-a_x + a_xd))*cos(phi)*phidot + (Ky*(-y + yd) + Kyd*(-v_y + v_yd) + Kydd*(-a_y + a_yd))*sin(phi)*phidot)/((Kx*(-x + xd) + Kxd*(-v_x + v_xd) + Kxdd*(-a_x + a_xd))**2 + (Ky*(-y + yd) + Kyd*(-v_y + v_yd) + Kydd*(-a_y + a_yd))**2 + (Kz*(-z + zd) + Kzd*(-v_z + v_zd) + Kzdd*(-a_z + a_zd) + g)**2))/np.sqrt(-((Kx*(-x + xd) + Kxd*(-v_x + v_xd) + Kxdd*(-a_x + a_xd))*sin(phi) - (Ky*(-y + yd) + Kyd*(-v_y + v_yd) + Kydd*(-a_y + a_yd))*cos(phi))**2/((Kx*(-x + xd) + Kxd*(-v_x + v_xd) + Kxdd*(-a_x + a_xd))**2 + (Ky*(-y + yd) + Kyd*(-v_y + v_yd) + Kydd*(-a_y + a_yd))**2 + (Kz*(-z + zd) + Kzd*(-v_z + v_zd) + Kzdd*(-a_z + a_zd) + g)**2)**2 + 1)
+        # thetadot = (((Kx*(-x + xd) + Kxd*(-v_x + v_xd) + Kxdd*(-a_x + a_xd))*sin(phi) - (Ky*(-y + yd) + Kyd*(-v_y + v_yd) + Kydd*(-a_y + a_yd))*cos(phi))*(-(2*Kxd*(-a_x + a_xd) + 2*Kxdd*(-j_x + j_xd))*(Kx*(-x + xd) + Kxd*(-v_x + v_xd) + Kxdd*(-a_x + a_xd)) - (2*Kyd*(-a_y + a_yd) + 2*Kydd*(-j_y + j_yd))*(Ky*(-y + yd) + Kyd*(-v_y + v_yd) + Kydd*(-a_y + a_yd)) - (2*Kzd*(-a_z + a_zd) + 2*Kzdd*(-j_z + j_zd))*(Kz*(-z + zd) + Kzd*(-v_z + v_zd) + Kzdd*(-a_z + a_zd) + g))/((Kx*(-x + xd) + Kxd*(-v_x + v_xd) + Kxdd*(-a_x + a_xd))**2 + (Ky*(-y + yd) + Kyd*(-v_y + v_yd) + Kydd*(-a_y + a_yd))**2 + (Kz*(-z + zd) + Kzd*(-v_z + v_zd) + Kzdd*(-a_z + a_zd) + g)**2)**2 + ((Kxd*(-a_x + a_xd) + Kxdd*(-j_x + j_xd))*sin(phi) - (Kyd*(-a_y + a_yd) + Kydd*(-j_y + j_yd))*cos(phi) + (Kx*(-x + xd) + Kxd*(-v_x + v_xd) + Kxdd*(-a_x + a_xd))*cos(phi)*phidot + (Ky*(-y + yd) + Kyd*(-v_y + v_yd) + Kydd*(-a_y + a_yd))*sin(phi)*phidot)/((Kx*(-x + xd) + Kxd*(-v_x + v_xd) + Kxdd*(-a_x + a_xd))**2 + (Ky*(-y + yd) + Kyd*(-v_y + v_yd) + Kydd*(-a_y + a_yd))**2 + (Kz*(-z + zd) + Kzd*(-v_z + v_zd) + Kzdd*(-a_z + a_zd) + g)**2))/np.sqrt(-((Kx*(-x + xd) + Kxd*(-v_x + v_xd) + Kxdd*(-a_x + a_xd))*sin(phi) - (Ky*(-y + yd) + Kyd*(-v_y + v_yd) + Kydd*(-a_y + a_yd))*cos(phi))**2/((Kx*(-x + xd) + Kxd*(-v_x + v_xd) + Kxdd*(-a_x + a_xd))**2 + (Ky*(-y + yd) + Kyd*(-v_y + v_yd) + Kydd*(-a_y + a_yd))**2 + (Kz*(-z + zd) + Kzd*(-v_z + v_zd) + Kzdd*(-a_z + a_zd) + g)**2)**2 + 1)
 
         # thetadot = (((a_x + A*v_x/m)*np.sin(mpi*(12*t**5/3125 - 6*t**4/125 + 4*t**3/25)) - (a_y + A*v_y/m)
         #              *np.cos(mpi*(12*t**5/3125 - 6*t**4/125 + 4*t**3/25)))*(-(a_x + A*v_x/m)*(2*j_x
@@ -113,7 +113,7 @@ class Controller:
         # thetadot = (((A*v_x/m + a_x)*sin(0.0120637157897848*t**5 - 0.15079644737231*t**4 + 0.502654824574367*t**3) - (A*v_y/m + a_y)*cos(0.0120637157897848*t**5 - 0.15079644737231*t**4 + 0.502654824574367*t**3))*(-(A*v_x/m + a_x)*(2*A*a_x/m + 2*j_x) - (A*v_y/m + a_y)*(2*A*a_y/m + 2*j_y) - (2*A*a_z/m + 2*j_z)*(A*v_z/m + g + a_z))/((A*v_x/m + a_x)**2 + (A*v_y/m + a_y)**2 + (A*v_z/m + g + a_z)**2)**2 + ((A*v_x/m + a_x)*(0.060318578948924*t**4 - 0.60318578948924*t**3 + 1.5079644737231*t**2)*cos(0.0120637157897848*t**5 - 0.15079644737231*t**4 + 0.502654824574367*t**3) + (A*v_y/m + a_y)*(0.060318578948924*t**4 - 0.60318578948924*t**3 + 1.5079644737231*t**2)*sin(0.0120637157897848*t**5 - 0.15079644737231*t**4 + 0.502654824574367*t**3) + (A*a_x/m + j_x)*sin(0.0120637157897848*t**5 - 0.15079644737231*t**4 + 0.502654824574367*t**3) - (A*a_y/m + j_y)*cos(0.0120637157897848*t**5 - 0.15079644737231*t**4 + 0.502654824574367*t**3))/((A*v_x/m + a_x)**2 + (A*v_y/m + a_y)**2 + (A*v_z/m + g + a_z)**2))/np.sqrt(-((A*v_x/m + a_x)*sin(0.0120637157897848*t**5 - 0.15079644737231*t**4 + 0.502654824574367*t**3) - (A*v_y/m + a_y)*cos(0.0120637157897848*t**5 - 0.15079644737231*t**4 + 0.502654824574367*t**3))**2/((A*v_x/m + a_x)**2 + (A*v_y/m + a_y)**2 + (A*v_z/m + g + a_z)**2)**2 + 1)
         # psi = Ky*(yd - y) + Kyd*(v_yd - v_y) + Kydd*(a_yd - a_y)
         psi = np.arctan(((d_x*np.cos(phi) + d_y*np.sin(phi)) / (d_x**2 + d_y**2 + (d_z + g)**2)))
-        psidot = (((Kx*(-x + xd) + Kxd*(-v_x + v_xd) + Kxdd*(-a_x + a_xd))*cos(phi) + (Ky*(-y + yd) + Kyd*(-v_y + v_yd) + Kydd*(-a_y + a_yd))*sin(phi))*(-(2*Kxd*(-a_x + a_xd) + 2*Kxdd*(-j_x + j_xd))*(Kx*(-x + xd) + Kxd*(-v_x + v_xd) + Kxdd*(-a_x + a_xd)) - (2*Kyd*(-a_y + a_yd) + 2*Kydd*(-j_y + j_yd))*(Ky*(-y + yd) + Kyd*(-v_y + v_yd) + Kydd*(-a_y + a_yd)) - (2*Kzd*(-a_z + a_zd) + 2*Kzdd*(-j_z + j_zd))*(Kz*(-z + zd) + Kzd*(-v_z + v_zd) + Kzdd*(-a_z + a_zd) + g))/((Kx*(-x + xd) + Kxd*(-v_x + v_xd) + Kxdd*(-a_x + a_xd))**2 + (Ky*(-y + yd) + Kyd*(-v_y + v_yd) + Kydd*(-a_y + a_yd))**2 + (Kz*(-z + zd) + Kzd*(-v_z + v_zd) + Kzdd*(-a_z + a_zd) + g)**2)**2 + ((Kxd*(-a_x + a_xd) + Kxdd*(-j_x + j_xd))*cos(phi) + (Kyd*(-a_y + a_yd) + Kydd*(-j_y + j_yd))*sin(phi) - (Kx*(-x + xd) + Kxd*(-v_x + v_xd) + Kxdd*(-a_x + a_xd))*sin(phi)*phidot + (Ky*(-y + yd) + Kyd*(-v_y + v_yd) + Kydd*(-a_y + a_yd))*cos(phi)*phidot)/((Kx*(-x + xd) + Kxd*(-v_x + v_xd) + Kxdd*(-a_x + a_xd))**2 + (Ky*(-y + yd) + Kyd*(-v_y + v_yd) + Kydd*(-a_y + a_yd))**2 + (Kz*(-z + zd) + Kzd*(-v_z + v_zd) + Kzdd*(-a_z + a_zd) + g)**2))/(((Kx*(-x + xd) + Kxd*(-v_x + v_xd) + Kxdd*(-a_x + a_xd))*cos(phi) + (Ky*(-y + yd) + Kyd*(-v_y + v_yd) + Kydd*(-a_y + a_yd))*sin(phi))**2/((Kx*(-x + xd) + Kxd*(-v_x + v_xd) + Kxdd*(-a_x + a_xd))**2 + (Ky*(-y + yd) + Kyd*(-v_y + v_yd) + Kydd*(-a_y + a_yd))**2 + (Kz*(-z + zd) + Kzd*(-v_z + v_zd) + Kzdd*(-a_z + a_zd) + g)**2)**2 + 1)
+        # psidot = (((Kx*(-x + xd) + Kxd*(-v_x + v_xd) + Kxdd*(-a_x + a_xd))*cos(phi) + (Ky*(-y + yd) + Kyd*(-v_y + v_yd) + Kydd*(-a_y + a_yd))*sin(phi))*(-(2*Kxd*(-a_x + a_xd) + 2*Kxdd*(-j_x + j_xd))*(Kx*(-x + xd) + Kxd*(-v_x + v_xd) + Kxdd*(-a_x + a_xd)) - (2*Kyd*(-a_y + a_yd) + 2*Kydd*(-j_y + j_yd))*(Ky*(-y + yd) + Kyd*(-v_y + v_yd) + Kydd*(-a_y + a_yd)) - (2*Kzd*(-a_z + a_zd) + 2*Kzdd*(-j_z + j_zd))*(Kz*(-z + zd) + Kzd*(-v_z + v_zd) + Kzdd*(-a_z + a_zd) + g))/((Kx*(-x + xd) + Kxd*(-v_x + v_xd) + Kxdd*(-a_x + a_xd))**2 + (Ky*(-y + yd) + Kyd*(-v_y + v_yd) + Kydd*(-a_y + a_yd))**2 + (Kz*(-z + zd) + Kzd*(-v_z + v_zd) + Kzdd*(-a_z + a_zd) + g)**2)**2 + ((Kxd*(-a_x + a_xd) + Kxdd*(-j_x + j_xd))*cos(phi) + (Kyd*(-a_y + a_yd) + Kydd*(-j_y + j_yd))*sin(phi) - (Kx*(-x + xd) + Kxd*(-v_x + v_xd) + Kxdd*(-a_x + a_xd))*sin(phi)*phidot + (Ky*(-y + yd) + Kyd*(-v_y + v_yd) + Kydd*(-a_y + a_yd))*cos(phi)*phidot)/((Kx*(-x + xd) + Kxd*(-v_x + v_xd) + Kxdd*(-a_x + a_xd))**2 + (Ky*(-y + yd) + Kyd*(-v_y + v_yd) + Kydd*(-a_y + a_yd))**2 + (Kz*(-z + zd) + Kzd*(-v_z + v_zd) + Kzdd*(-a_z + a_zd) + g)**2))/(((Kx*(-x + xd) + Kxd*(-v_x + v_xd) + Kxdd*(-a_x + a_xd))*cos(phi) + (Ky*(-y + yd) + Kyd*(-v_y + v_yd) + Kydd*(-a_y + a_yd))*sin(phi))**2/((Kx*(-x + xd) + Kxd*(-v_x + v_xd) + Kxdd*(-a_x + a_xd))**2 + (Ky*(-y + yd) + Kyd*(-v_y + v_yd) + Kydd*(-a_y + a_yd))**2 + (Kz*(-z + zd) + Kzd*(-v_z + v_zd) + Kzdd*(-a_z + a_zd) + g)**2)**2 + 1)
 
         # psidot = (((A*v_x/m + a_x)*cos(0.0120637157897848*t**5 - 0.15079644737231*t**4 + 0.502654824574367*t**3) + (A*v_y/m + a_y)*sin(0.0120637157897848*t**5 - 0.15079644737231*t**4 + 0.502654824574367*t**3))*(-(A*v_x/m + a_x)*(2*A*a_x/m + 2*j_x) - (A*v_y/m + a_y)*(2*A*a_y/m + 2*j_y) - (2*A*a_z/m + 2*j_z)*(A*v_z/m + g + a_z))/((A*v_x/m + a_x)**2 + (A*v_y/m + a_y)**2 + (A*v_z/m + g + a_z)**2)**2 + (-(A*v_x/m + a_x)*(0.060318578948924*t**4 - 0.60318578948924*t**3 + 1.5079644737231*t**2)*sin(0.0120637157897848*t**5 - 0.15079644737231*t**4 + 0.502654824574367*t**3) + (A*v_y/m + a_y)*(0.060318578948924*t**4 - 0.60318578948924*t**3 + 1.5079644737231*t**2)*cos(0.0120637157897848*t**5 - 0.15079644737231*t**4 + 0.502654824574367*t**3) + (A*a_x/m + j_x)*cos(0.0120637157897848*t**5 - 0.15079644737231*t**4 + 0.502654824574367*t**3) + (A*a_y/m + j_y)*sin(0.0120637157897848*t**5 - 0.15079644737231*t**4 + 0.502654824574367*t**3))/((A*v_x/m + a_x)**2 + (A*v_y/m + a_y)**2 + (A*v_z/m + g + a_z)**2))/(((A*v_x/m + a_x)*cos(0.0120637157897848*t**5 - 0.15079644737231*t**4 + 0.502654824574367*t**3) + (A*v_y/m + a_y)*sin(0.0120637157897848*t**5 - 0.15079644737231*t**4 + 0.502654824574367*t**3))**2/((A*v_x/m + a_x)**2 + (A*v_y/m + a_y)**2 + (A*v_z/m + g + a_z)**2)**2 + 1)
         # psidot = 0
@@ -133,7 +133,7 @@ class Controller:
         T = m*(d_x*(sin(psi)*cos(phi)*cos(theta) + sin(phi)*sin(theta)) + d_y*(sin(psi)*sin(phi)*cos(theta) - cos(psi)*sin(theta)) + (d_z+g)*(cos(psi)*cos(theta)))
         # desired_state = np.array([zd, v_zd, theta, thetadot, psi, psidot, phi, phidot, T])
         # return desired_state, thetadot, psidot
-        desired_state = np.array([zd, v_zd, theta, psi, phi, phidot, T, thetadot, psidot], dtype='float64')
+        desired_state = np.array([zd, v_zd, theta, psi, phi, phidot, T], dtype='float64')
         return desired_state
 
     def _get_torques(self, vertical, ang, desired_state):
@@ -149,9 +149,9 @@ class Controller:
         # "Getting torque for given angle and torques"
 
         # calculating the elevation torque.
-        accel = self.g + self.K_z[1]*(desired_state[1] - vertical[1]) + self.K_z[0] * (desired_state[0] - vertical[0])
-        T = accel * self.m / (np.cos(ang[0, 0]) * np.cos(ang[1, 0]))
-        # T = desired_state[6]
+        # accel = self.g + self.K_z[1]*(desired_state[1] - vertical[1]) + self.K_z[0] * (desired_state[0] - vertical[0])
+        # T = accel * self.m / (np.cos(ang[0, 0]) * np.cos(ang[1, 0]))
+        T = desired_state[6]
 
         T_theta = ((self.K_theta[1] * (-ang[0,1]) + self.K_theta[0] * (desired_state[2] - ang[0,0])) * self.I[0])
         T_psi = (self.K_psi[1] * (-ang[1,1]) + self.K_psi[0] * (desired_state[3] - ang[1,0])) * self.I[1]

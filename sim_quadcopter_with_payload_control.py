@@ -453,8 +453,6 @@ theta0, psi0, phi0, thetadot0, psidot0, phidot0 = [0, 0, 0, 0, 0, 0]
 theta_l0 = 0; phi_l0 = 0
 thetadot_l0 = 0; phidot_l0 = 0
 # theta0, psi0, phi0, thetadot0, psidot0, phidot0 = [np.deg2rad(10), np.deg2rad(10), np.deg2rad(10), 0, 0, 0]
-X_lin_0 = np.array([x0, y0, z0, vx0, vy0, vz0], dtype='float64')
-X_ang_0 = np.array([theta0, psi0, phi0, thetadot0, psidot0, phidot0], dtype='float64')
 lin_acc_prev = np.array([0, 0, 0], dtype='float64')
 
 h = 0.005
@@ -471,7 +469,7 @@ T = t[N-1]
 
 
 # t = np.linspace(0, 1, 101)
-X0 = np.array([x0, y0, z0, theta_l0, phi_l0, phi0, theta0, psi0, vx0, vy0, vz0, thetadot_l0, phidot_l0, phidot0, thetadot0, psidot0])
+X0 = np.array([x0, y0, z0, theta_l0, phi_l0, phi0, theta0, psi0, vx0, vy0, vz0, thetadot_l0, phidot_l0, phidot0, thetadot0, psidot0], dtype='float64')
 # X = odeint(eom, X0, t, args=all_parms)
 
 mm = len(X0)
@@ -526,14 +524,16 @@ for i in range(0, N-1):
     desired_traj_values = np.array([x_ref[i], y_ref[i], z_ref[i], v_x[i], v_y[i], v_z[i], a_x[i], a_y[i], a_z[i], j_x[i], j_y[i], j_z[i], phi[i], phidot[i], phiddot[i],
                                     phitdot[i]])
     t_temp = np.array([t[i], t[i+1]], dtype='float64')
-    linacc, jerk = lin.linear_acceleration_duplicate(X_lin_0, t_temp, X_ang_0, omega, A, lin_acc_prev)
-    actual_traj_values = np.array([X_lin_0[0], X_lin_0[1], X_lin_0[2], X_lin_0[3], X_lin_0[4], X_lin_0[5], linacc[0], linacc[1], linacc[2], jerk[0], jerk[1], jerk[2]])
-    control = Controller(K_z, K_psi, K_theta, K_phi, Kp, Kd, Kdd, Ki, A, k, l, b_drag_const)
-    # desired_state, thetadot, psidot = control.get_desired_positions(t_temp, desired_traj_values, actual_traj_values)
-    desired_state = control.get_desired_positions(t_temp, desired_traj_values, actual_traj_values)
     all_parms = (parms.m_q,parms.m_l,parms.Ixx,parms.Iyy,parms.Izz,parms.g,parms.l,parms.cable_l,
                  parms.K,parms.b,parms.Ax,parms.Ay,parms.Az,
                  parms.omega1,parms.omega2,parms.omega3,parms.omega4)
+    linacc = eom(X0, t_temp, parms.m_q,parms.m_l,parms.Ixx,parms.Iyy,parms.Izz,parms.g,parms.l,parms.cable_l,
+                 parms.K,parms.b,parms.Ax,parms.Ay,parms.Az,
+                 parms.omega1,parms.omega2,parms.omega3,parms.omega4)
+    actual_traj_values = np.array([X0[0], X0[1], X0[2], X0[8], X0[9], X0[10], linacc[8], linacc[9], linacc[10]])
+    control = Controller(K_z, K_psi, K_theta, K_phi, Kp, Kd, Kdd, Ki, A, k, l, b_drag_const)
+    # desired_state, thetadot, psidot = control.get_desired_positions(t_temp, desired_traj_values, actual_traj_values)
+    desired_state = control.get_desired_positions(t_temp, desired_traj_values, actual_traj_values)
     X = odeint(eom, X0, t_temp, args=all_parms)
     ang = np.array([[X[1][5], X[1][13]], [X[1][6], X[1][14]], [X[1][7], X[1][15]]], dtype='float64')
     translation = np.array([[X[1][0], X[1][8]], [X[1][1], X[1][9]], [X[1][2], X[1][10]]], dtype='float64')
