@@ -12,6 +12,7 @@ class Controller:
         self.A = A[0]  # Considering Ax = Ay = Az = 0.25
         self.k = k
         self.l = l
+        self.cable_l = 0.2
         self.b = b
         self.last_ang_pos = np.zeros(3)
         self.integral_error_x = 0
@@ -20,7 +21,8 @@ class Controller:
 
         # Constants
         self.g = 9.81
-        self.m = 0.468
+        self.m_q = 0.468
+        self.m_l = 0.1
         self.I = np.array([4.856*1e-3, 4.856*1e-3, 8.801*1e-3])
         self.Kx, self.Ky, self.Kz = Kp
         self.Kdx, self.Kdy, self.Kdz = Kd
@@ -51,7 +53,7 @@ class Controller:
         # j_x, j_y, j_z = act_traj_vals[9:12]
 
         t = t_step[1] - t_step[0]
-        m = self.m
+        m = self.m_q + self.m_l
         g = self.g
         A = self.A
         Kx, Ky, Kz = self.Kx, self.Ky, self.Kz

@@ -24,15 +24,15 @@ class parameters:
         self.Ay = 0.25*0
         self.Az = 0.25*0
         self.pause = 0.01
-        self.fps = 30
-        self.K_z = np.array([2.5, 1.5])
-        self.K_phi = np.array([6, 1.75])
-        self.K_theta = np.array([6, 1.75])
-        self.K_psi = np.array([-6, -1.75])
+        self.fps = 5
+        self.K_z = np.array([1.5, 2.5])
+        self.K_phi = np.array([3, 0.75])
+        self.K_theta = np.array([3, 0.75])
+        self.K_psi = np.array([-3, -0.75])
         self.Kp = np.array([10, 10, 10])
         self.Kd = np.array([7, 7, 7])
         self.Kdd = np.array([1.00, 1.00, 1.00])
-        self.Ki = np.array([1.5, 1.5, 1.5])
+        self.Ki = np.array([1.5*5, 1.5*5, 1.5*5])
 
         omega = 1
         speed = omega*np.sqrt(1/self.K)
@@ -74,28 +74,27 @@ def rotation(phi,theta,psi):
     return R
 
 
-def animate(t,Xpos,Xang,parms):
-    #interpolation
-    Xpos = np.array(Xpos) #convert list to ndarray
-    Xang = np.array(Xang)
-    t_interp = np.arange(t[0],t[len(t)-1], 1/parms.fps)
-    [m,n] = np.shape(Xpos)
-    shape = (len(t_interp),n)
+def animate(t,Xpos,Xang,parms) -> None:
+    """
+    This function animates the drone simulation.
+    :param t: integration time step
+    :param Xpos: Gets the 3-D linear positions of the drone: [x, y, z]
+    :param Xang: Gets the 3-D angular positions of the drone: [theta, psi, phi] in radians
+    :return: The animation of drone hovering
+    """
+    t_interp = np.arange(t[0],t[len(t)-1], 1 / parms.fps)
+    [m, n] = np.shape(Xpos)
+    shape = (len(t_interp), n)
     Xpos_interp = np.zeros(shape)
     Xang_interp = np.zeros(shape)
     l = parms.l
 
-    for i in range(0,n):
+    for i in range(0, n):
         fpos = interpolate.interp1d(t, Xpos[:,i])
         Xpos_interp[:,i] = fpos(t_interp)
         fang = interpolate.interp1d(t, Xang[:,i])
         Xang_interp[:,i] = fang(t_interp)
 
-    # ll = np.max(np.array([lx,ly,lz]))+0.1
-    lmax = np.max(Xpos)
-    lmin = np.min(Xpos)
-    # print(lmin)
-    # print(lmax)
 
     axle_x = np.array([[-l/2, 0, 0],
                        [l/2, 0, 0]])
@@ -109,40 +108,41 @@ def animate(t,Xpos,Xang,parms):
         x = Xpos_interp[ii,0]
         y = Xpos_interp[ii,1]
         z = Xpos_interp[ii,2]
-        phi = Xang_interp[ii,0]
-        theta = Xang_interp[ii,1]
-        psi = Xang_interp[ii,2]
+        theta = Xang_interp[ii,0]
+        psi = Xang_interp[ii,1]
+        phi = Xang_interp[ii,2]
+        ang = np.array([theta, psi, phi])
+        # R = self.Rotation_matrix(ang)
         R = rotation(phi,theta,psi)
 
         new_axle_x = np.zeros((p2,q2))
         for i in range(0,p2):
             r_body = axle_x[i,:]
             r_world = R.dot(r_body)
-            new_axle_x[i,:] = r_world
+            new_axle_x[i, :] = r_world
 
-        new_axle_x = np.array([x, y, z]) +new_axle_x
+        new_axle_x = np.array([x, y, z]) + new_axle_x
         # print(new_axle_x)
 
         new_axle_y = np.zeros((p2,q2))
         for i in range(0,p2):
             r_body = axle_y[i,:]
             r_world = R.dot(r_body)
-            new_axle_y[i,:] = r_world
+            new_axle_y[i, :] = r_world
 
-        new_axle_y = np.array([x, y, z]) +new_axle_y
+        new_axle_y = np.array([x, y, z]) + new_axle_y
         # print(new_axle_y)
 
-        ax = p3.Axes3D(fig)
-        axle1, = ax.plot(new_axle_x[:,0],new_axle_x[:,1],new_axle_x[:,2], 'ro-', linewidth=3)
-        axle2, = ax.plot(new_axle_y[:,0],new_axle_y[:,1],new_axle_y[:,2], 'bo-', linewidth=3)
+        ax = p3.Axes3D(fig, auto_add_to_figure=False)
+        fig.add_axes(ax)
+        axle1, = ax.plot(new_axle_x[:, 0],new_axle_x[:, 1],new_axle_x[:, 2], 'ro-', linewidth=3)
+        axle2, = ax.plot(new_axle_y[:, 0], new_axle_y[:, 1], new_axle_y[:, 2], 'bo-', linewidth=3)
+        track, = plt.plot(x, y, z, color='black',marker='o',markersize=2)
 
-
-        ax.set_xlim([-1, 1])
-        ax.set_ylim([-1, 1])
-        ax.set_zlim([-1, 1])
-        ax.view_init(azim=-72,elev=20)
-
-        # ax.axis('off');
+        ax.set_xlim(-1, 1)
+        ax.set_ylim(-1, 1)
+        ax.set_zlim(-1, 2.5)
+        ax.view_init(azim=-72, elev=20)
 
         plt.pause(parms.pause)
 
@@ -172,7 +172,7 @@ def eom(X,t,m_q,m_l,Ixx,Iyy,Izz,g,l,cable_l,K,b,Ax,Ay,Az,omega1,omega2,omega3,om
     A = np.zeros((8,8))
     B = np.zeros((8,1))
 
-    A[ 0 , 0 ]= 1.0*Ixx**2*m_q + 1.0*m_l
+    A[ 0 , 0 ]= 1.0*m_l + 1.0*m_q
     A[ 0 , 1 ]= 0
     A[ 0 , 2 ]= 0
     A[ 0 , 3 ]= 1.0*cable_l*m_l*sin(phi_l)*sin(theta_l)
@@ -181,7 +181,7 @@ def eom(X,t,m_q,m_l,Ixx,Iyy,Izz,g,l,cable_l,K,b,Ax,Ay,Az,omega1,omega2,omega3,om
     A[ 0 , 6 ]= 0
     A[ 0 , 7 ]= 0
     A[ 1 , 0 ]= 0
-    A[ 1 , 1 ]= 1.0*Iyy**2*m_q + 1.0*m_l
+    A[ 1 , 1 ]= 1.0*m_l + 1.0*m_q
     A[ 1 , 2 ]= 0
     A[ 1 , 3 ]= 1.0*cable_l*m_l*cos(theta_l)
     A[ 1 , 4 ]= 0
@@ -190,9 +190,9 @@ def eom(X,t,m_q,m_l,Ixx,Iyy,Izz,g,l,cable_l,K,b,Ax,Ay,Az,omega1,omega2,omega3,om
     A[ 1 , 7 ]= 0
     A[ 2 , 0 ]= 0
     A[ 2 , 1 ]= 0
-    A[ 2 , 2 ]= 1.0*Izz**2*m_q + 1.0*m_l
+    A[ 2 , 2 ]= 1.0*m_l + 1.0*m_q
     A[ 2 , 3 ]= 1.0*cable_l*m_l*sin(theta_l)*cos(phi_l)
-    A[ 2 , 4 ]= 0.5*cable_l*m_l*sin(2*theta_l)
+    A[ 2 , 4 ]= 1.0*cable_l*m_l*sin(phi_l)*cos(theta_l)
     A[ 2 , 5 ]= 0
     A[ 2 , 6 ]= 0
     A[ 2 , 7 ]= 0
@@ -200,15 +200,15 @@ def eom(X,t,m_q,m_l,Ixx,Iyy,Izz,g,l,cable_l,K,b,Ax,Ay,Az,omega1,omega2,omega3,om
     A[ 3 , 1 ]= 1.0*cable_l*m_l*cos(theta_l)
     A[ 3 , 2 ]= 1.0*cable_l*m_l*sin(theta_l)*cos(phi_l)
     A[ 3 , 3 ]= 1.0*cable_l**2*m_l
-    A[ 3 , 4 ]= 1.0*cable_l**2*m_l*(-sin(phi_l) + sin(theta_l))*sin(theta_l)*cos(phi_l)*cos(theta_l)
+    A[ 3 , 4 ]= 0
     A[ 3 , 5 ]= 0
     A[ 3 , 6 ]= 0
     A[ 3 , 7 ]= 0
     A[ 4 , 0 ]= -1.0*cable_l*m_l*cos(phi_l)*cos(theta_l)
     A[ 4 , 1 ]= 0
-    A[ 4 , 2 ]= 0.5*cable_l*m_l*sin(2*theta_l)
-    A[ 4 , 3 ]= 1.0*cable_l**2*m_l*(-sin(phi_l) + sin(theta_l))*sin(theta_l)*cos(phi_l)*cos(theta_l)
-    A[ 4 , 4 ]= 1.0*cable_l**2*m_l*(sin(theta_l)**2 + cos(phi_l)**2)*cos(theta_l)**2
+    A[ 4 , 2 ]= 1.0*cable_l*m_l*sin(phi_l)*cos(theta_l)
+    A[ 4 , 3 ]= 0
+    A[ 4 , 4 ]= 1.0*cable_l**2*m_l*cos(theta_l)**2
     A[ 4 , 5 ]= 0
     A[ 4 , 6 ]= 0
     A[ 4 , 7 ]= 0
@@ -238,13 +238,12 @@ def eom(X,t,m_q,m_l,Ixx,Iyy,Izz,g,l,cable_l,K,b,Ax,Ay,Az,omega1,omega2,omega3,om
     A[ 7 , 7 ]= 1.0*Ixx*sin(theta)**2 + 1.0*Iyy*sin(phi)**2*cos(theta)**2 + 1.0*Izz*cos(phi)**2*cos(theta)**2
     B[ 0 ]= -Ax*vx + K*(sin(phi)*sin(psi) + sin(theta)*cos(phi)*cos(psi))*(omega1**2 + omega2**2 + omega3**2 + omega4**2)*cos(theta) - K*(sin(psi - 2*theta) - sin(psi + 2*theta))*(omega1**2 + omega2**2 + omega3**2 + omega4**2)/4 - 1.0*cable_l*m_l*phi_ldot*(phi_ldot*sin(phi_l)*cos(theta_l) + theta_ldot*sin(theta_l)*cos(phi_l)) - 1.0*cable_l*m_l*theta_ldot*(phi_ldot*sin(theta_l)*cos(phi_l) + theta_ldot*sin(phi_l)*cos(theta_l))
     B[ 1 ]= -Ay*vy - K*(sin(phi)*cos(psi) - sin(psi)*sin(theta)*cos(phi))*(omega1**2 + omega2**2 + omega3**2 + omega4**2)*cos(theta) + K*(cos(psi - 2*theta) - cos(psi + 2*theta))*(omega1**2 + omega2**2 + omega3**2 + omega4**2)/4 + cable_l*m_l*theta_ldot**2*sin(theta_l)
-    B[ 2 ]= -Az*vz - K*(omega1**2 + omega2**2 + omega3**2 + omega4**2)*sin(theta)**2 + K*(omega1**2 + omega2**2 + omega3**2 + omega4**2)*cos(phi)*cos(theta)**2 + 1.0*cable_l*m_l*phi_ldot*theta_ldot*sin(phi_l)*sin(theta_l) - 1.0*cable_l*m_l*theta_ldot*(-2*phi_ldot*sin(theta_l)**2 + phi_ldot + theta_ldot*cos(phi_l)*cos(theta_l)) - g*m_l - g*m_q
-    B[ 3 ]= 1.0*m_l*(-cable_l**2*phi_ldot**2*sin(phi_l)**2*sin(theta_l)*cos(theta_l) + cable_l**2*phi_ldot**2*sin(phi_l)*sin(theta_l)**2*cos(theta_l) - 2*cable_l**2*phi_ldot**2*sin(theta_l)**3*cos(theta_l) + cable_l**2*phi_ldot**2*sin(theta_l)*cos(theta_l) + cable_l*phi_ldot*vz*sin(phi_l)*sin(theta_l) - 2*cable_l*phi_ldot*vz*sin(theta_l)**2 + cable_l*phi_ldot*vz - g*l*sin(theta_l)*cos(phi_l))
-    B[ 4 ]= m_l*(-1.0*cable_l**2*phi_ldot**2*sin(phi_l)*sin(theta_l)**2*cos(phi_l) + 1.0*cable_l**2*phi_ldot**2*sin(phi_l)*cos(phi_l) - 2.0*cable_l**2*phi_ldot*theta_ldot*sin(phi_l)**2*sin(theta_l)*cos(theta_l) + 4.0*cable_l**2*phi_ldot*theta_ldot*sin(theta_l)**3*cos(theta_l) - 2.0*cable_l**2*theta_ldot**2*sin(phi_l)*sin(theta_l)**2*cos(phi_l) + 1.0*cable_l**2*theta_ldot**2*sin(phi_l)*cos(phi_l) + 3.0*cable_l**2*theta_ldot**2*sin(theta_l)**3*cos(phi_l) - 2.0*cable_l**2*theta_ldot**2*sin(theta_l)*cos(phi_l) - 1.0*cable_l*theta_ldot*vz*sin(phi_l)*sin(theta_l) + 2.0*cable_l*theta_ldot*vz*sin(theta_l)**2 - 1.0*cable_l*theta_ldot*vz - 1.0*g*l*sin(phi_l)*cos(theta_l))
+    B[ 2 ]= -Az*vz - K*(omega1**2 + omega2**2 + omega3**2 + omega4**2)*sin(theta)**2 + K*(omega1**2 + omega2**2 + omega3**2 + omega4**2)*cos(phi)*cos(theta)**2 - 1.0*cable_l*m_l*phi_ldot*(phi_ldot*cos(phi_l)*cos(theta_l) - theta_ldot*sin(phi_l)*sin(theta_l)) + 1.0*cable_l*m_l*theta_ldot*(phi_ldot*sin(phi_l)*sin(theta_l) - theta_ldot*cos(phi_l)*cos(theta_l)) - g*m_l - g*m_q
+    B[ 3 ]= -1.0*m_l*(cable_l**2*phi_ldot**2*cos(theta_l) + g*l*cos(phi_l))*sin(theta_l)
+    B[ 4 ]= m_l*(2.0*cable_l**2*phi_ldot*theta_ldot*sin(theta_l) - 1.0*g*l*sin(phi_l))*cos(theta_l)
     B[ 5 ]= Ixx*psidot*thetadot*cos(theta) - K*l*(omega2**2 - omega4**2) + psidot*(psidot*(Iyy - Izz)*(sin(2*phi - theta) + sin(2*phi + theta)) - 2.0*thetadot*(-Iyy + Izz)*cos(2*phi))*cos(theta)/4 - thetadot*(psidot*(-Iyy + Izz)*cos(2*phi)*cos(theta) + thetadot*(Iyy - Izz)*sin(2*phi))/2
     B[ 6 ]= -0.5*Ixx*phidot*psidot*cos(theta) - K*l*(omega1**2 - omega3**2) - 1.0*phidot*(psidot*(Iyy - Izz)*cos(2*phi)*cos(theta) - thetadot*(Iyy - Izz)*sin(2*phi)) + 0.125*psidot*thetadot*(Iyy - Izz)*(cos(2*phi - theta) - cos(2*phi + theta)) - psidot*(0.5*Ixx*phidot*cos(theta) + psidot*(-Ixx + Iyy*sin(phi)**2 + Izz*cos(phi)**2)*sin(theta)*cos(theta) + 0.125*thetadot*(Iyy - Izz)*(cos(2*phi - theta) - cos(2*phi + theta)))
     B[ 7 ]= b*(omega1**2 - omega2**2 + omega3**2 - omega4**2) - phidot*(0.5*psidot*(Iyy - Izz)*(sin(2*phi - theta) + sin(2*phi + theta)) - 1.0*thetadot*(-Iyy + Izz)*cos(2*phi))*cos(theta) + thetadot*(1.0*Ixx*phidot*cos(theta) + 2.0*psidot*(-Ixx + Iyy*sin(phi)**2 + Izz*cos(phi)**2)*sin(theta)*cos(theta) + 0.25*thetadot*(Iyy - Izz)*(cos(2*phi - theta) - cos(2*phi + theta)))
-
     invA = np.linalg.inv(A)
     Xddot = invA.dot(B)
     i = 0
@@ -264,8 +263,8 @@ def eom(X,t,m_q,m_l,Ixx,Iyy,Izz,g,l,cable_l,K,b,Ax,Ay,Az,omega1,omega2,omega3,om
 parms = parameters()
 h = 0.005
 t0 = 0
-t1 = 25
-tN = 100
+t1 = 5
+tN = 7
 # N = int((tN-t0)/h) + 1
 # t = np.linspace(t0, tN, N)
 N1 = int((t1-t0)/h)
@@ -455,12 +454,12 @@ thetadot_l0 = 0; phidot_l0 = 0
 # theta0, psi0, phi0, thetadot0, psidot0, phidot0 = [np.deg2rad(10), np.deg2rad(10), np.deg2rad(10), 0, 0, 0]
 lin_acc_prev = np.array([0, 0, 0], dtype='float64')
 
-h = 0.005
-t0 = 0
-tN = 5
-N = int((tN-t0)/h) + 1
-# t = np.linspace(t0, tN, N)
-T = t[N-1]
+# h = 0.005
+# t0 = 0
+# tN = 5
+# N = int((tN-t0)/h) + 1
+# # t = np.linspace(t0, tN, N)
+# T = t[N-1]
 
 # x0 = 0; y0 = 0; z0 = 1
 # vx0 = 0; vy0 = 0; vz0 = 0
@@ -517,7 +516,21 @@ l = parms.l
 omega = np.array([parms.omega1, parms.omega2, parms.omega3, parms.omega4])
 OMEGA = np.zeros((len(t), 4))
 OMEGA[0] = omega
+X_POS = np.zeros((len(t), 6))
+X_ANG = np.zeros((len(t), 6))
+X_POS[0, 0] = X0[0]
+X_POS[0, 1] = X0[1]
+X_POS[0, 2] = X0[2]
+X_POS[0, 3] = X0[8]
+X_POS[0, 4] = X0[9]
+X_POS[0, 5] = X0[10]
 
+X_ANG[0, 0] = X0[5]
+X_ANG[0, 1] = X0[6]
+X_ANG[0, 2] = X0[7]
+X_ANG[0, 3] = X0[13]
+X_ANG[0, 4] = X0[14]
+X_ANG[0, 5] = X0[15]
 
 for i in range(0, N-1):
     j = 0
@@ -527,10 +540,10 @@ for i in range(0, N-1):
     all_parms = (parms.m_q,parms.m_l,parms.Ixx,parms.Iyy,parms.Izz,parms.g,parms.l,parms.cable_l,
                  parms.K,parms.b,parms.Ax,parms.Ay,parms.Az,
                  parms.omega1,parms.omega2,parms.omega3,parms.omega4)
-    linacc = eom(X0, t_temp, parms.m_q,parms.m_l,parms.Ixx,parms.Iyy,parms.Izz,parms.g,parms.l,parms.cable_l,
+    acc = eom(X0, t_temp, parms.m_q,parms.m_l,parms.Ixx,parms.Iyy,parms.Izz,parms.g,parms.l,parms.cable_l,
                  parms.K,parms.b,parms.Ax,parms.Ay,parms.Az,
                  parms.omega1,parms.omega2,parms.omega3,parms.omega4)
-    actual_traj_values = np.array([X0[0], X0[1], X0[2], X0[8], X0[9], X0[10], linacc[8], linacc[9], linacc[10]])
+    actual_traj_values = np.array([X0[0], X0[1], X0[2], X0[8], X0[9], X0[10], acc[8], acc[9], acc[10]])
     control = Controller(K_z, K_psi, K_theta, K_phi, Kp, Kd, Kdd, Ki, A, k, l, b_drag_const)
     # desired_state, thetadot, psidot = control.get_desired_positions(t_temp, desired_traj_values, actual_traj_values)
     desired_state = control.get_desired_positions(t_temp, desired_traj_values, actual_traj_values)
@@ -559,8 +572,21 @@ for i in range(0, N-1):
     PHIDOT.append(X[1][j]); j+=1;
     THETADOT.append(X[1][j]); j+=1;
     PSIDOT.append(X[1][j]); j+=1;
-    X_pos.append(np.array([X_VAL[i], Y[i], Z[i]]))
-    X_ang.append(np.array([PHI[i], THETA[i], PSI[i]]))
+    X_POS[i+1, 0] = X[1][0]
+    X_POS[i+1, 1] = X[1][1]
+    X_POS[i+1, 2] = X[1][2]
+    X_POS[i+1, 3] = X[1][8]
+    X_POS[i+1, 4] = X[1][9]
+    X_POS[i+1, 5] = X[1][10]
+
+    X_ANG[i+1, 0] = X[1][5]
+    X_ANG[i+1, 1] = X[1][6]
+    X_ANG[i+1, 2] = X[1][7]
+    X_ANG[i+1, 3] = X[1][13]
+    X_ANG[i+1, 4] = X[1][14]
+    X_ANG[i+1, 5] = X[1][15]
+    # X_pos.append(np.array([X_VAL[i], Y[i], Z[i]]))
+    # X_ang.append(np.array([PHI[i], THETA[i], PSI[i]]))
     OMEGA[i+1] = omega_temp
 
 plt.figure(1)
@@ -585,19 +611,19 @@ plt.xlabel('time')
 plt.ylabel('angular position');
 plt.legend(['Angle phi', 'Angle theta', 'Angle psi'])
 
-# plt.figure(2)
-# plt.subplot(2,1,1)
-# plt.plot(t,phi);
-# plt.plot(t,theta)
-# plt.plot(t,psi)
-# plt.ylabel('angular position');
-# plt.subplot(2,1,2)
-# plt.plot(t,phidot);
-# plt.plot(t,thetadot)
-# plt.plot(t,psidot)
-# plt.xlabel('time')
-# plt.ylabel('angular velocity');
-# #
+plt.figure(2)
+plt.subplot(2,1,1)
+plt.plot(t,phi);
+plt.plot(t,theta)
+plt.plot(t,psi)
+plt.ylabel('angular position');
+plt.subplot(2,1,2)
+plt.plot(t,phidot);
+plt.plot(t,thetadot)
+plt.plot(t,psidot)
+plt.xlabel('time')
+plt.ylabel('angular velocity');
+#
 
 #
 # ax=plt.figure(4)
@@ -614,12 +640,12 @@ plt.legend(['Angle phi', 'Angle theta', 'Angle psi'])
 # ax.legend(['x', 'y','z'])
 # plt.ylabel('omega body');
 # plt.xlabel('time')
-#
-#
-#plt.show()
+
+
+# plt.show()
 plt.show(block=False)
 plt.pause(60)
 plt.close()
 #
 fig = plt.figure(5)
-animate(t,X_pos,X_ang,parms)
+animate(t,X_POS,X_ANG,parms)

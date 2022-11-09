@@ -73,7 +73,8 @@ I = sy.Matrix( [
     [Ixx, 0, 0],
     [0, Iyy, 0],
     [0,  0, Izz]
-]) #body frame inertia
+])
+
 v = sy.Matrix([vx, vy, vz])
 q = sy.Matrix([x, y, z, theta_l, phi_l, phi, theta, psi])
 qdot = sy.Matrix([vx, vy, vz, theta_ldot, phi_ldot, phidot, thetadot, psidot])
@@ -81,7 +82,7 @@ J_11 = sy.eye(3)
 J_12 = sy.Matrix([
     [cable_l*sin(phi_l)*sin(theta_l), -cable_l*cos(theta_l)*cos(phi_l)],
     [cable_l*cos(theta_l), 0],
-    [cable_l*cos(phi_l)*sin(theta_l), cable_l*cos(theta_l)*sin(theta_l)]
+    [cable_l*cos(phi_l)*sin(theta_l), cable_l*cos(theta_l)*sin(phi_l)]
 ])
 J_1 = sy.BlockMatrix([J_11, J_12])
 vel = sy.Matrix([vx, vy, vz, theta_ldot, phi_ldot])
@@ -122,7 +123,7 @@ M = sy.Matrix([
     [sy.zeros(3,3), sy.zeros(3,3), I]
 ])
 J = sy.Matrix([
-    [I, sy.zeros(3,2), sy.zeros(3,3)],
+    [sy.eye(3), sy.zeros(3,2), sy.zeros(3,3)],
     [J_11, J_12, sy.zeros(3,3)],
     [sy.zeros(3,3), sy.zeros(3,2), J_2]
 ])
