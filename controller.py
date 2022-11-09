@@ -149,9 +149,9 @@ class Controller:
         # "Getting torque for given angle and torques"
 
         # calculating the elevation torque.
-        # accel = self.g + self.K_z[1]*(desired_state[1] - vertical[1]) + self.K_z[0] * (desired_state[0] - vertical[0])
-        # T = accel * self.m / (np.cos(ang[0, 0]) * np.cos(ang[1, 0]))
-        T = desired_state[6]
+        accel = self.g + self.K_z[1]*(desired_state[1] - vertical[1]) + self.K_z[0] * (desired_state[0] - vertical[0])
+        T = accel * self.m / (np.cos(ang[0, 0]) * np.cos(ang[1, 0]))
+        # T = desired_state[6]
 
         T_theta = ((self.K_theta[1] * (-ang[0,1]) + self.K_theta[0] * (desired_state[2] - ang[0,0])) * self.I[0])
         T_psi = (self.K_psi[1] * (-ang[1,1]) + self.K_psi[0] * (desired_state[3] - ang[1,0])) * self.I[1]
