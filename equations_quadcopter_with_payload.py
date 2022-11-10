@@ -136,7 +136,7 @@ L = T[0] - V
 
 #external force
 Fz = K*(omega1**2+omega2**2+omega3**2+omega4**2)
-Thrust = sy.Matrix([Fz*sin(theta), 0,Fz*cos(theta)])
+Thrust = sy.Matrix([0, 0, Fz])
 Drag = sy.Matrix([Ax*vx, Ay*vy, Az*vz])
 F_ext = R*Thrust-Drag
 tau_phi = K*l*(omega4**2 - omega2**2)

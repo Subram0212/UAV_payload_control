@@ -151,9 +151,9 @@ class Controller:
         # "Getting torque for given angle and torques"
 
         # calculating the elevation torque.
-        # accel = self.g + self.K_z[1]*(desired_state[1] - vertical[1]) + self.K_z[0] * (desired_state[0] - vertical[0])
-        # T = accel * self.m / (np.cos(ang[0, 0]) * np.cos(ang[1, 0]))
-        T = desired_state[6]
+        accel = self.g + self.K_z[1]*(desired_state[1] - vertical[1]) + self.K_z[0] * (desired_state[0] - vertical[0])
+        T = accel * (self.m_q + self.m_l) / (np.cos(ang[0, 0]) * np.cos(ang[1, 0]))
+        # T = desired_state[6]
 
         T_theta = ((self.K_theta[1] * (-ang[0,1]) + self.K_theta[0] * (desired_state[2] - ang[0,0])) * self.I[0])
         T_psi = (self.K_psi[1] * (-ang[1,1]) + self.K_psi[0] * (desired_state[3] - ang[1,0])) * self.I[1]
@@ -165,12 +165,12 @@ class Controller:
         ethetad = -ang[0,1]
         epsid = -ang[1,1]
         ephid = desired_state[5] - ang[2,1]
-        print("Errors in PD for angular positions: {}, {}, {}".format(etheta, epsi, ephi))
-        print("Errors in PD for angular velocities: {}, {}, {}".format(ethetad, epsid, ephid))
+        # print("Errors in PD for angular positions: {}, {}, {}".format(etheta, epsi, ephi))
+        # print("Errors in PD for angular velocities: {}, {}, {}".format(ethetad, epsid, ephid))
+        #
+        # print("************************************************")
 
-        print("************************************************")
-
-        return np.array([T, T_theta, T_psi, T_phi]), desired_state[2], desired_state[3]
+        return np.array([T, T_theta, T_psi, T_phi], dtype='float64'), desired_state[2], desired_state[3]
 
     def get_action(self, desired_action, ang, translation) -> np.ndarray:
         """Get the control action given desired and ang, translation
@@ -192,14 +192,14 @@ class Controller:
         w_3 = np.sqrt(T[0] / (4 * self.k) + T[2] / (2 * self.k * self.l) - T[3] / (4 * self.b))
         w_4 = np.sqrt(T[0] / (4 * self.k) + T[1] / (2 * self.k * self.l) + T[3] / (4 * self.b))
 
-        # print("---------------------------------------------------------------------------")
+        print("---------------------------------------------------------------------------")
 
-        # print(T[0] / (4 * self.k), -T[2] / (2 * self.k * self.l), -T[3] / (4 * self.b))
-        # print(T[0] / (4 * self.k), - T[1] / (2 * self.k * self.l), + T[3] / (4 * self.b))
-        # print(T[0] / (4 * self.k), T[2] / (2 * self.k * self.l), - T[3] / (4 * self.b))
-        # print(T[0] / (4 * self.k), T[1] / (2 * self.k * self.l), T[3] / (4 * self.b))
+        print(T[0] / (4 * self.k), -T[2] / (2 * self.k * self.l), -T[3] / (4 * self.b))
+        print(T[0] / (4 * self.k), - T[1] / (2 * self.k * self.l), + T[3] / (4 * self.b))
+        print(T[0] / (4 * self.k), T[2] / (2 * self.k * self.l), - T[3] / (4 * self.b))
+        print(T[0] / (4 * self.k), T[1] / (2 * self.k * self.l), T[3] / (4 * self.b))
 
-        # print("---------------------------------------------------------------------------")
+        print("---------------------------------------------------------------------------")
 
         rotor_speeds_fdbk = np.array([w_1, w_2, w_3, w_4])
         return rotor_speeds_fdbk.reshape(len(rotor_speeds_fdbk), 1)

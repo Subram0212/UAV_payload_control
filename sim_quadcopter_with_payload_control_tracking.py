@@ -25,14 +25,14 @@ class parameters:
         self.Az = 0.25*0
         self.pause = 0.01
         self.fps = 5
-        self.K_z = np.array([1.5, 2.5])
-        self.K_phi = np.array([3, 0.75])
-        self.K_theta = np.array([3, 0.75])
-        self.K_psi = np.array([-3, -0.75])
+        self.K_z = np.array([1, 2])
+        self.K_phi = np.array([4, 4])
+        self.K_theta = np.array([4, 4])
+        self.K_psi = np.array([-4, -4])
         self.Kp = np.array([10, 10, 10])
         self.Kd = np.array([7, 7, 7])
         self.Kdd = np.array([1.00, 1.00, 1.00])
-        self.Ki = np.array([1.5*5, 1.5*5, 1.5*5])
+        self.Ki = np.array([1.5, 1.5, 1.5])
 
         omega = 1
         speed = omega*np.sqrt(1/self.K)
@@ -74,7 +74,7 @@ def rotation(phi,theta,psi):
     return R
 
 
-def animate(t,Xpos,Xang,parms) -> None:
+def animate(t,Xpos,Xang,Theta_l, Phi_l, parms) -> None:
     """
     This function animates the drone simulation.
     :param t: integration time step
@@ -87,6 +87,8 @@ def animate(t,Xpos,Xang,parms) -> None:
     shape = (len(t_interp), n)
     Xpos_interp = np.zeros(shape)
     Xang_interp = np.zeros(shape)
+    theta_l_interp = np.zeros(shape)
+    phi_l_interp = np.zeros(shape)
     l = parms.l
 
     for i in range(0, n):
@@ -94,6 +96,10 @@ def animate(t,Xpos,Xang,parms) -> None:
         Xpos_interp[:,i] = fpos(t_interp)
         fang = interpolate.interp1d(t, Xang[:,i])
         Xang_interp[:,i] = fang(t_interp)
+    f_thetal = interpolate.interp1d(t, Theta_l)
+    theta_l_interp = f_thetal(t_interp)
+    f_phil = interpolate.interp1d(t, Phi_l)
+    phi_l_interp = f_phil(t_interp)
 
 
     axle_x = np.array([[-l/2, 0, 0],
@@ -103,6 +109,7 @@ def animate(t,Xpos,Xang,parms) -> None:
 
 
     [p2,q2] = np.shape(axle_x)
+    new_load_pos = np.zeros((3, 1))
 
     for ii in range(0,len(t_interp)):
         x = Xpos_interp[ii,0]
@@ -112,8 +119,22 @@ def animate(t,Xpos,Xang,parms) -> None:
         psi = Xang_interp[ii,1]
         phi = Xang_interp[ii,2]
         ang = np.array([theta, psi, phi])
+        theta_l = theta_l_interp[ii]
+        phi_l = phi_l_interp[ii]
         # R = self.Rotation_matrix(ang)
         R = rotation(phi,theta,psi)
+        R_y_phil = np.array([
+            [cos(phi_l),  0, sin(phi_l)],
+            [0,           1,          0],
+            [-sin(phi_l),  0, cos(phi_l)]
+        ])
+
+        R_x_thetal = np.array([
+            [1,            0,         0],
+            [0,     cos(theta_l), -sin(theta_l)],
+            [0,     sin(theta_l),  cos(theta_l)]
+
+        ])
 
         new_axle_x = np.zeros((p2,q2))
         for i in range(0,p2):
@@ -132,12 +153,18 @@ def animate(t,Xpos,Xang,parms) -> None:
 
         new_axle_y = np.array([x, y, z]) + new_axle_y
         # print(new_axle_y)
+        R_load = R_y_phil.dot(R_x_thetal)
+        length = np.array([0, 0, -cable_l])
+        length = length.reshape(len(length),1)
+        pos = np.array([x, y, z]).reshape(3,1)
+        new_load_pos = pos + R_load.dot(length)
 
         ax = p3.Axes3D(fig, auto_add_to_figure=False)
         fig.add_axes(ax)
         axle1, = ax.plot(new_axle_x[:, 0],new_axle_x[:, 1],new_axle_x[:, 2], 'ro-', linewidth=3)
         axle2, = ax.plot(new_axle_y[:, 0], new_axle_y[:, 1], new_axle_y[:, 2], 'bo-', linewidth=3)
         track, = plt.plot(x, y, z, color='black',marker='o',markersize=2)
+        load, = plt.plot([x, new_load_pos[0]], [y, new_load_pos[1]], [z, new_load_pos[2]], color='black',marker='o',markersize=5)
 
         ax.set_xlim(-1, 1)
         ax.set_ylim(-1, 1)
@@ -236,9 +263,9 @@ def eom(X,t,m_q,m_l,Ixx,Iyy,Izz,g,l,cable_l,K,b,Ax,Ay,Az,omega1,omega2,omega3,om
     A[ 7 , 5 ]= -1.0*Ixx*sin(theta)
     A[ 7 , 6 ]= 0.25*(Iyy - Izz)*(sin(2*phi - theta) + sin(2*phi + theta))
     A[ 7 , 7 ]= 1.0*Ixx*sin(theta)**2 + 1.0*Iyy*sin(phi)**2*cos(theta)**2 + 1.0*Izz*cos(phi)**2*cos(theta)**2
-    B[ 0 ]= -Ax*vx + K*(sin(phi)*sin(psi) + sin(theta)*cos(phi)*cos(psi))*(omega1**2 + omega2**2 + omega3**2 + omega4**2)*cos(theta) - K*(sin(psi - 2*theta) - sin(psi + 2*theta))*(omega1**2 + omega2**2 + omega3**2 + omega4**2)/4 - 1.0*cable_l*m_l*phi_ldot*(phi_ldot*sin(phi_l)*cos(theta_l) + theta_ldot*sin(theta_l)*cos(phi_l)) - 1.0*cable_l*m_l*theta_ldot*(phi_ldot*sin(theta_l)*cos(phi_l) + theta_ldot*sin(phi_l)*cos(theta_l))
-    B[ 1 ]= -Ay*vy - K*(sin(phi)*cos(psi) - sin(psi)*sin(theta)*cos(phi))*(omega1**2 + omega2**2 + omega3**2 + omega4**2)*cos(theta) + K*(cos(psi - 2*theta) - cos(psi + 2*theta))*(omega1**2 + omega2**2 + omega3**2 + omega4**2)/4 + cable_l*m_l*theta_ldot**2*sin(theta_l)
-    B[ 2 ]= -Az*vz - K*(omega1**2 + omega2**2 + omega3**2 + omega4**2)*sin(theta)**2 + K*(omega1**2 + omega2**2 + omega3**2 + omega4**2)*cos(phi)*cos(theta)**2 - 1.0*cable_l*m_l*phi_ldot*(phi_ldot*cos(phi_l)*cos(theta_l) - theta_ldot*sin(phi_l)*sin(theta_l)) + 1.0*cable_l*m_l*theta_ldot*(phi_ldot*sin(phi_l)*sin(theta_l) - theta_ldot*cos(phi_l)*cos(theta_l)) - g*m_l - g*m_q
+    B[ 0 ]= -Ax*vx + K*(sin(phi)*sin(psi) + sin(theta)*cos(phi)*cos(psi))*(omega1**2 + omega2**2 + omega3**2 + omega4**2) - 1.0*cable_l*m_l*phi_ldot*(phi_ldot*sin(phi_l)*cos(theta_l) + theta_ldot*sin(theta_l)*cos(phi_l)) - 1.0*cable_l*m_l*theta_ldot*(phi_ldot*sin(theta_l)*cos(phi_l) + theta_ldot*sin(phi_l)*cos(theta_l))
+    B[ 1 ]= -Ay*vy - K*(sin(phi)*cos(psi) - sin(psi)*sin(theta)*cos(phi))*(omega1**2 + omega2**2 + omega3**2 + omega4**2) + 1.0*cable_l*m_l*theta_ldot**2*sin(theta_l)
+    B[ 2 ]= -Az*vz + K*(omega1**2 + omega2**2 + omega3**2 + omega4**2)*cos(phi)*cos(theta) - 1.0*cable_l*m_l*phi_ldot*(phi_ldot*cos(phi_l)*cos(theta_l) - theta_ldot*sin(phi_l)*sin(theta_l)) + 1.0*cable_l*m_l*theta_ldot*(phi_ldot*sin(phi_l)*sin(theta_l) - theta_ldot*cos(phi_l)*cos(theta_l)) - g*m_l - g*m_q
     B[ 3 ]= -1.0*m_l*(cable_l**2*phi_ldot**2*cos(theta_l) + g*l*cos(phi_l))*sin(theta_l)
     B[ 4 ]= m_l*(2.0*cable_l**2*phi_ldot*theta_ldot*sin(theta_l) - 1.0*g*l*sin(phi_l))*cos(theta_l)
     B[ 5 ]= Ixx*psidot*thetadot*cos(theta) - K*l*(omega2**2 - omega4**2) + psidot*(psidot*(Iyy - Izz)*(sin(2*phi - theta) + sin(2*phi + theta)) - 2.0*thetadot*(-Iyy + Izz)*cos(2*phi))*cos(theta)/4 - thetadot*(psidot*(-Iyy + Izz)*cos(2*phi)*cos(theta) + thetadot*(Iyy - Izz)*sin(2*phi))/2
@@ -261,10 +288,10 @@ def eom(X,t,m_q,m_l,Ixx,Iyy,Izz,g,l,cable_l,K,b,Ax,Ay,Az,omega1,omega2,omega3,om
 
 
 parms = parameters()
-h = 0.005
+h = 0.05
 t0 = 0
-t1 = 5
-tN = 7
+t1 = 20
+tN = 50
 # N = int((tN-t0)/h) + 1
 # t = np.linspace(t0, tN, N)
 N1 = int((t1-t0)/h)
@@ -626,20 +653,20 @@ plt.ylabel('angular velocity');
 #
 
 #
-# ax=plt.figure(4)
-# plt.subplot(2,1,1)
-# plt.plot(t,omega_x);
+ax=plt.figure(4)
+plt.subplot(1,1,1)
+plt.plot(t,OMEGA);
 # plt.plot(t,omega_y);
 # plt.plot(t,omega_z);
-# ax.legend(['x', 'y','z'])
-# plt.ylabel('omega world');
+ax.legend(['rotor1', 'rotor2','rotor3', 'rotor4'])
+plt.ylabel('omega');
 # plt.subplot(2,1,2)
 # plt.plot(t,omega_body_x);
 # plt.plot(t,omega_body_y);
 # plt.plot(t,omega_body_z);
 # ax.legend(['x', 'y','z'])
 # plt.ylabel('omega body');
-# plt.xlabel('time')
+plt.xlabel('time')
 
 
 # plt.show()
