@@ -5,7 +5,7 @@ from scipy import interpolate
 from scipy.integrate import odeint
 #from mpl_toolkits.mplot3d import art3d
 import mpl_toolkits.mplot3d.axes3d as p3
-from controller import Controller
+from controller_fdbklin import Controller
 
 
 class parameters:
@@ -27,18 +27,21 @@ class parameters:
         self.fps = 30
         self.K_z = np.array([1, 2])
         self.K_phi = np.array([4, 4])
-        self.K_theta = np.array([4, 4])
+        self.K_theta = np.array([10, 5])
         self.K_psi = np.array([-8, -8])
         self.Kp = np.array([5, 5, 5])
         self.Kd = np.array([4, 4, 4])
         self.Kdd = np.array([1.00, 1.00, 1.00])
         self.Ki = np.array([1.5, 1.5, 1.5])
+        self.Kx = np.array([2, 1])
+        self.Kz = np.array([2, 1])
 
         omega = 1
         speed = omega*np.sqrt(1/self.K)
         dspeed = 0.05*speed
         self.u1 = 0
         self.theta_d = 0
+        self.tau_theta = 0
 
 def cos(angle):
     return np.cos(angle)
@@ -189,12 +192,12 @@ def eom(X,t,m_q,m_l,Ixx,Iyy,Izz,g,l,cable_l,K,b,Ax,Ay,Az,u1,theta_d,tau_theta):
 parms = parameters()
 h = 0.005
 t0 = 0
-tN = 5
+tN = 10
 N = int((tN-t0)/h) + 1
 t = np.linspace(t0, tN, N)
 T = t[N-1]
 
-x0 = 0; z0 = 1
+x0 = 5; z0 = 5
 vx0 = 0; vz0 = 0
 theta0 = np.deg2rad(0)
 thetadot0 = 0
@@ -241,39 +244,59 @@ Kp = parms.Kp
 Kd = parms.Kd
 Kdd = parms.Kdd
 Ki = parms.Ki
+Kx = parms.Kx
+Kz = parms.Kz
 A = np.array([parms.Ax, parms.Ay, parms.Az])
 k = parms.K
 b_drag_const = parms.b
 l = parms.l
-omega = np.array([parms.omega1, parms.omega2, parms.omega3, parms.omega4])
+# omega = np.array([parms.omega1, parms.omega2, parms.omega3, parms.omega4])
 OMEGA = np.zeros((len(t), 4))
-OMEGA[0] = omega
+# OMEGA[0] = omega
 X_POS = np.zeros((len(t), 2))
 X_ANG = np.zeros((len(t), 2))
 X_POS[0, 0] = X0[0]
 X_POS[0, 1] = X0[1]
 
-X_ANG[0, 0] = X0[3]
-X_ANG[0, 1] = X0[4]
+X_ANG[0, 0] = X0[2]
+X_ANG[0, 1] = X0[3]
 
 
 for i in range(0, N-1):
     j = 0
-    control = Controller(K_z, K_psi, K_theta, K_phi, Kp, Kd, Kdd, Ki, A, k, l, b_drag_const)
+    control = Controller(K_z, K_psi, K_theta, K_phi, Kp, Kd, Kdd, Ki, Kx, Kz, A, k, l, b_drag_const)
     t_temp = np.array([t[i], t[i+1]], dtype='float64')
     # desired_state = control.get_desired_positions(t_temp, desired_traj_values)
-    desired_state = np.array([x_ref[i], v_x_ref[i], z_ref[i], v_z_ref[i], theta_des[i], thetadot_des[i]])
+    desired_state = np.array([x_ref[i], z_ref[i], v_x_ref[i], v_z_ref[i], a_x_ref[i], a_z_ref[i]])
     all_parms = (parms.m_q,parms.m_l,parms.Ixx,parms.Iyy,parms.Izz,parms.g,parms.l,parms.cable_l,
                  parms.K,parms.b,parms.Ax,parms.Ay,parms.Az,
-                 parms.u1, parms.theta_d)
+                 parms.u1,parms.theta_d,parms.tau_theta)
     X = odeint(eom, X0, t_temp, args=all_parms)
+    x_des, z_des, xdot_des, zdot_des, xddot_des, zddot_des = desired_state
+    x = X[1][0]
+    z = X[1][1]
+    phil = X[1][2]
+    vx = X[1][4]
+    vz = X[1][5]
+    phildot = X[1][6]
+    theta = X[1][3]
+    thetadot = X[1][7]
+    # x, vx, z, vz, x_des, z_des, xdot_des, zdot_des, xddot_des, zddot_des, phi_l, phi_ldot
+
     # ang = np.array([[X[1][3], X[1][9]], [X[1][4], X[1][10]], [X[1][5], X[1][11]]], dtype='float64')
     # translation = np.array([[X[1][0], X[1][6]], [X[1][1], X[1][7]], [X[1][2], X[1][8]]], dtype='float64')
     # vertical = translation[2]
     # torques, theta_temp, psi_temp = control.get_forces(vertical, ang, desired_state)
-    omega = control.get_action(desired_state, ang, translation)
-    omega_temp = omega.reshape(4,)
+    # omega = control.get_action(desired_state, ang, translation)
+    # omega_temp = omega.reshape(4,)
     # parms.omega1, parms.omega2, parms.omega3, parms.omega4 = omega
+    theta_d, u1 = control.get_desired_positions(x, vx, z, vz, x_des, z_des, xdot_des, zdot_des, xddot_des, zddot_des, phil, phildot)
+    parms.theta_d = theta_d
+    parms.u1 = u1
+    ang = np.array([theta, thetadot], dtype='float64')
+    THETA_DES_STATE = np.array([theta_d], dtype='float64')
+    T_theta = control.choose_action(ang, THETA_DES_STATE)
+    parms.tau_theta = T_theta
     X0 = X[1]
     X_VAL.append(X[1][j]); j+=1;
     Z.append(X[1][j]); j+=1;
@@ -285,20 +308,12 @@ for i in range(0, N-1):
     THETADOT.append(X[1][j]); j+=1;
     X_POS[i+1, 0] = X[1][0]
     X_POS[i+1, 1] = X[1][1]
-    X_POS[i+1, 2] = X[1][2]
-    X_POS[i+1, 3] = X[1][8]
-    X_POS[i+1, 4] = X[1][9]
-    X_POS[i+1, 5] = X[1][10]
 
-    X_ANG[i+1, 0] = X[1][5]
-    X_ANG[i+1, 1] = X[1][6]
-    X_ANG[i+1, 2] = X[1][7]
-    X_ANG[i+1, 3] = X[1][13]
-    X_ANG[i+1, 4] = X[1][14]
-    X_ANG[i+1, 5] = X[1][15]
+    X_ANG[i+1, 0] = X[1][2]
+    X_ANG[i+1, 1] = X[1][3]
     # X_pos.append(np.array([X_VAL[i], Y[i], Z[i]]))
     # X_ang.append(np.array([PHI[i], THETA[i], PSI[i]]))
-    OMEGA[i+1] = omega_temp
+    # OMEGA[i+1] = omega_temp
 
 plt.figure(1)
 plt.subplot(3,1,1)
@@ -333,17 +348,17 @@ plt.legend(['Angle phi', 'Angle theta', 'Angle psi'])
 # #
 
 #
-ax=plt.figure(4)
-plt.subplot(1,1,1)
-plt.plot(t,OMEGA);
-plt.ylabel('omega');
-# plt.subplot(2,1,2)
-# plt.plot(t,omega_body_x);
-# plt.plot(t,omega_body_y);
-# plt.plot(t,omega_body_z);
-ax.legend(['rotor1', 'rotor2','rotor3', 'rotor4'])
-# plt.ylabel('omega body');
-plt.xlabel('time')
+# ax=plt.figure(4)
+# plt.subplot(1,1,1)
+# plt.plot(t,OMEGA);
+# plt.ylabel('omega');
+# # plt.subplot(2,1,2)
+# # plt.plot(t,omega_body_x);
+# # plt.plot(t,omega_body_y);
+# # plt.plot(t,omega_body_z);
+# ax.legend(['rotor1', 'rotor2','rotor3', 'rotor4'])
+# # plt.ylabel('omega body');
+# plt.xlabel('time')
 #
 #
 fig = plt.figure(5)

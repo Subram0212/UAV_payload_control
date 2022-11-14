@@ -3,7 +3,7 @@ import numpy as np
 
 
 class Controller:
-    def __init__(self, K_z, K_psi, K_theta, K_phi, Kp, Kd, Kdd, Ki, kpx, kdx, kpz, kdz, A, k: float,
+    def __init__(self, K_z, K_psi, K_theta, K_phi, Kp, Kd, Kdd, Ki, Kx, Kz, A, k: float,
                  l: float, b: float) -> None:
         self.K_z = K_z
         self.K_psi = K_psi
@@ -32,7 +32,7 @@ class Controller:
         self.kpz, self.kdz = Kz
 
     def get_desired_positions(self, x, vx, z, vz, x_des, z_des, xdot_des, zdot_des, xddot_des, zddot_des, phi_l, phi_ldot):
-        u_z = -self.kpz*(z - z_des) - self.kdz*(vz - zdot_des) + zddot_des
+        u_z = -self.kpz*(z - z_des) - self.kdz*(vz - zdot_des) + zddot_des - 1.5
         u_x = -self.kpx*(x - x_des) - self.kdx*(vx - xdot_des) + xddot_des
 
         theta_d = (u_x + ((self.m_l*self.cable_l*np.sin(phi_l)*(phi_ldot**2))/(self.m_l+self.m_q)) + ((self.m_l*self.g*np.sin(2*phi_l))/(2*self.m_q))) / (self.g + ((self.g*self.m_l)/(2*self.m_q))*(1 - np.cos(2*phi_l)))
@@ -40,7 +40,10 @@ class Controller:
 
         return theta_d, u1
 
-    def choose_action(self, ktheta, kdtheta, ):
-        T_theta = (self.K_theta[1] * (ang[1,1]) - self.K_psi[0] * (ang[1,0] - desired_state[3])) * self.I[1]
+    def choose_action(self, ang, desired_state):
+        e_theta = ang[0] - desired_state[0]
+        omega_yd = -self.K_theta[0]*e_theta
+        e_omega = ang[1] - omega_yd
+        T_theta = (-self.K_theta[1]*e_omega) * self.I[1]
         return T_theta
 
