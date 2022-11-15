@@ -5,7 +5,7 @@ from scipy import interpolate
 from scipy.integrate import odeint
 #from mpl_toolkits.mplot3d import art3d
 import mpl_toolkits.mplot3d.axes3d as p3
-from controller_fdbklin import Controller
+from controller_fdbklin_2D import Controller
 
 
 class parameters:

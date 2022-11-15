@@ -20,7 +20,7 @@ theta_ldot, phi_ldot = sy.symbols('theta_ldot phi_ldot', real=True)
 theta_lddot, phi_lddot = sy.symbols('theta_lddot phi_lddot', real=True)
 m_q,m_l,g,Ixx,Iyy,Izz = sy.symbols('m_q m_l g Ixx Iyy Izz', real=True)
 K,l,b, cable_l, Ax,Ay,Az = sy.symbols('K l b cable_l Ax Ay Az', real=True)
-omega1,omega2,omega3,omega4 = sy.symbols('omega1 omega2 omega3 omega4', real=True)
+u1,u2,u3,u4 = sy.symbols('u1 u2 u3 u4', real=True)
 
 
 # %%%%%%% unit vectors %%%%%%%
@@ -135,13 +135,13 @@ L = T[0] - V
 # print('TE= PE+KE');
 
 #external force
-Fz = K*(omega1**2+omega2**2+omega3**2+omega4**2)
+Fz = u1
 Thrust = sy.Matrix([0, 0, Fz])
 Drag = sy.Matrix([Ax*vx, Ay*vy, Az*vz])
-F_ext = R*Thrust  # -Drag
-tau_phi = K*l*(omega4**2 - omega2**2)
-tau_theta = K*l*(omega3**2 - omega1**2)
-tau_psi = b*(omega1**2-omega2**2+omega3**2-omega4**2)
+F_ext = R*Thrust-Drag
+tau_phi = u2
+tau_theta = u3
+tau_psi = u4
 tau_ext = sy.Matrix([0, 0, tau_phi,tau_theta,tau_psi])
 # T_ext = np.concatenate(F_ext,tau_ext)
 # print(T_ext)
@@ -208,55 +208,55 @@ for ii in range(0,mm):
 
 Ainv = A.inv()
 xddot = Ainv.dot(B)
-print('xddot',sy.simplify(xddot[0]))
-print('yddot',sy.simplify(xddot[1]))
-print('zddot',sy.simplify(xddot[2]))
-print('thetalddot',sy.simplify(xddot[3]))
-print('philddot',sy.simplify(xddot[4]))
-print('phiddot',sy.simplify(xddot[5]))
-print('thetaddot',sy.simplify(xddot[6]))
-print('psiddot',sy.simplify(xddot[7]))
+# print('xddot',sy.simplify(xddot[0]))
+# print('yddot',sy.simplify(xddot[1]))
+# print('zddot',sy.simplify(xddot[2]))
+# print('thetalddot',sy.simplify(xddot[3]))
+# print('philddot',sy.simplify(xddot[4]))
+# print('phiddot',sy.simplify(xddot[5]))
+# print('thetaddot',sy.simplify(xddot[6]))
+# print('psiddot',sy.simplify(xddot[7]))
 
-# x_ddot = xddot[0]
-# yddot = xddot[1]
-# zddot = xddot[2]
-# thetalddot = xddot[3]
-# philddot = xddot[4]
-# phiddot = xddot[5]
-# thetaddot = xddot[6]
-# psiddot = xddot[7]
-#
-# xddot_lin = x_ddot.subs([(sin(phi), phi), (sin(theta), theta), (cos(phi), 1), (cos(theta), 1), (psi, 0), (theta_ldot, 0), (phi_ldot, 0), (sin(theta_l), theta_l), (sin(phi_l), phi_l), (cos(theta_l), 1), (cos(phi_l), 1), (phi_l*theta_l, 0), (phi_l**2, 0), (phi_l**4, 0), (theta_l**4, 0), (theta_l**2, 0), (phi*theta, 0), (phi**2, 0), (theta**2, 0), (phi**4, 0), (theta**4, 0)])
-# yddot_lin = yddot.subs([(sin(phi), phi), (sin(theta), theta), (cos(phi), 1), (cos(theta), 1), (psi, 0), (theta_ldot, 0), (phi_ldot, 0), (sin(theta_l), theta_l), (sin(phi_l), phi_l), (cos(theta_l), 1), (cos(phi_l), 1), (phi_l*theta_l, 0), (phi_l**2, 0), (phi_l**4, 0), (theta_l**4, 0), (theta_l**2, 0), (phi*theta, 0), (phi**2, 0), (theta**2, 0), (phi**4, 0), (theta**4, 0)])
-# zddot_lin = zddot.subs([(sin(phi), phi), (sin(theta), theta), (cos(phi), 1), (cos(theta), 1), (psi, 0), (theta_ldot, 0), (phi_ldot, 0), (sin(theta_l), theta_l), (sin(phi_l), phi_l), (cos(theta_l), 1), (cos(phi_l), 1), (phi_l*theta_l, 0), (phi_l**2, 0), (phi_l**4, 0), (theta_l**4, 0), (theta_l**2, 0), (phi*theta, 0), (phi**2, 0), (theta**2, 0), (phi**4, 0), (theta**4, 0)])
-# thetalddot_lin = thetalddot.subs([(sin(phi), phi), (sin(theta), theta), (cos(phi), 1), (cos(theta), 1), (psi, 0), (theta_ldot, 0), (phi_ldot, 0), (sin(theta_l), theta_l), (sin(phi_l), phi_l), (cos(theta_l), 1), (cos(phi_l), 1), (phi_l*theta_l, 0), (phi_l**2, 0), (phi_l**4, 0), (theta_l**4, 0), (theta_l**2, 0), (phi*theta, 0), (phi**2, 0), (theta**2, 0), (phi**4, 0), (theta**4, 0)])
-# philddot_lin = philddot.subs([(sin(phi), phi), (sin(theta), theta), (cos(phi), 1), (cos(theta), 1), (psi, 0), (theta_ldot, 0), (phi_ldot, 0), (sin(theta_l), theta_l), (sin(phi_l), phi_l), (cos(theta_l), 1), (cos(phi_l), 1), (phi_l*theta_l, 0), (phi_l**2, 0), (phi_l**4, 0), (theta_l**4, 0), (theta_l**2, 0), (phi*theta, 0), (phi**2, 0), (theta**2, 0), (phi**4, 0), (theta**4, 0)])
-# phiddot_lin = phiddot.subs([(sin(phi), phi), (sin(theta), theta), (cos(phi), 1), (cos(theta), 1), (psi, 0), (theta_ldot, 0), (phi_ldot, 0), (sin(theta_l), theta_l), (sin(phi_l), phi_l), (cos(theta_l), 1), (cos(phi_l), 1), (phidot, 0), (thetadot, 0), (psidot, 0), (phi_l*theta_l, 0), (phi_l**2, 0), (phi_l**4, 0), (theta_l**4, 0), (theta_l**2, 0), (phi*theta, 0), (phi**2, 0), (theta**2, 0), (phi**4, 0), (theta**4, 0)])
-# thetaddot_lin = thetaddot.subs([(sin(phi), phi), (sin(theta), theta), (cos(phi), 1), (cos(theta), 1), (psi, 0), (theta_ldot, 0), (phi_ldot, 0), (sin(theta_l), theta_l), (sin(phi_l), phi_l), (cos(theta_l), 1), (cos(phi_l), 1), (phidot, 0), (thetadot, 0), (psidot, 0), (phi_l*theta_l, 0), (phi_l**2, 0), (phi_l**4, 0), (theta_l**4, 0), (theta_l**2, 0), (phi*theta, 0), (phi**2, 0), (theta**2, 0), (phi**4, 0), (theta**4, 0)])
-# psiddot_lin = psiddot.subs([(sin(phi), phi), (sin(theta), theta), (cos(phi), 1), (cos(theta), 1), (psi, 0), (theta_ldot, 0), (phi_ldot, 0), (sin(theta_l), theta_l), (sin(phi_l), phi_l), (cos(theta_l), 1), (cos(phi_l), 1), (phidot, 0), (thetadot, 0), (psidot, 0), (phi_l*theta_l, 0), (phi_l**2, 0), (phi_l**4, 0), (theta_l**4, 0), (theta_l**2, 0), (phi*theta, 0), (phi**2, 0), (theta**2, 0), (phi**4, 0), (theta**4, 0)])
-#
-# print('xddot_lin',sy.simplify(xddot_lin))
-# print('yddot_lin',sy.simplify(yddot_lin))
-# print('zddot_lin',sy.simplify(zddot_lin))
-# print('thetalddot_lin',sy.simplify(thetalddot_lin))
-# print('philddot_lin',sy.simplify(philddot_lin))
-# print('phiddot_lin',sy.simplify(phiddot_lin))
-# print('thetaddot_lin',sy.simplify(thetaddot_lin))
-# print('psiddot_lin',sy.simplify(psiddot_lin))
-#
-# print(EOM[0])
-# print('\n')
-# print(EOM[1])
-# print('\n')
-# print(EOM[2])
-# print('\n')
-# print(EOM[3])
-# print('\n')
-# print(EOM[4])
-# print('\n')
-# print(EOM[5])
-# print('\n')
-# print(EOM[6])
-# print('\n')
-# print(EOM[7])
-# print('\n')
+x_ddot = xddot[0]
+yddot = xddot[1]
+zddot = xddot[2]
+thetalddot = xddot[3]
+philddot = xddot[4]
+phiddot = xddot[5]
+thetaddot = xddot[6]
+psiddot = xddot[7]
+
+xddot_lin = x_ddot.subs([(sin(phi), phi), (sin(theta), theta), (cos(phi), 1), (cos(theta), 1), (psi, 0), (theta_ldot, 0), (phi_ldot, 0), (sin(theta_l), theta_l), (sin(phi_l), phi_l), (cos(theta_l), 1), (cos(phi_l), 1), (phi_l*theta_l, 0), (phi_l**2, 0), (phi_l**4, 0), (theta_l**4, 0), (theta_l**2, 0), (phi*theta, 0), (phi**2, 0), (theta**2, 0), (phi**4, 0), (theta**4, 0)])
+yddot_lin = yddot.subs([(sin(phi), phi), (sin(theta), theta), (cos(phi), 1), (cos(theta), 1), (psi, 0), (theta_ldot, 0), (phi_ldot, 0), (sin(theta_l), theta_l), (sin(phi_l), phi_l), (cos(theta_l), 1), (cos(phi_l), 1), (phi_l*theta_l, 0), (phi_l**2, 0), (phi_l**4, 0), (theta_l**4, 0), (theta_l**2, 0), (phi*theta, 0), (phi**2, 0), (theta**2, 0), (phi**4, 0), (theta**4, 0)])
+zddot_lin = zddot.subs([(sin(phi), phi), (sin(theta), theta), (cos(phi), 1), (cos(theta), 1), (psi, 0), (theta_ldot, 0), (phi_ldot, 0), (sin(theta_l), theta_l), (sin(phi_l), phi_l), (cos(theta_l), 1), (cos(phi_l), 1), (phi_l*theta_l, 0), (phi_l**2, 0), (phi_l**4, 0), (theta_l**4, 0), (theta_l**2, 0), (phi*theta, 0), (phi**2, 0), (theta**2, 0), (phi**4, 0), (theta**4, 0)])
+thetalddot_lin = thetalddot.subs([(sin(phi), phi), (sin(theta), theta), (cos(phi), 1), (cos(theta), 1), (psi, 0), (theta_ldot, 0), (phi_ldot, 0), (sin(theta_l), theta_l), (sin(phi_l), phi_l), (cos(theta_l), 1), (cos(phi_l), 1), (phi_l*theta_l, 0), (phi_l**2, 0), (phi_l**4, 0), (theta_l**4, 0), (theta_l**2, 0), (phi*theta, 0), (phi**2, 0), (theta**2, 0), (phi**4, 0), (theta**4, 0)])
+philddot_lin = philddot.subs([(sin(phi), phi), (sin(theta), theta), (cos(phi), 1), (cos(theta), 1), (psi, 0), (theta_ldot, 0), (phi_ldot, 0), (sin(theta_l), theta_l), (sin(phi_l), phi_l), (cos(theta_l), 1), (cos(phi_l), 1), (phi_l*theta_l, 0), (phi_l**2, 0), (phi_l**4, 0), (theta_l**4, 0), (theta_l**2, 0), (phi*theta, 0), (phi**2, 0), (theta**2, 0), (phi**4, 0), (theta**4, 0)])
+phiddot_lin = phiddot.subs([(sin(phi), phi), (sin(theta), theta), (cos(phi), 1), (cos(theta), 1), (psi, 0), (theta_ldot, 0), (phi_ldot, 0), (sin(theta_l), theta_l), (sin(phi_l), phi_l), (cos(theta_l), 1), (cos(phi_l), 1), (phidot, 0), (thetadot, 0), (psidot, 0), (phi_l*theta_l, 0), (phi_l**2, 0), (phi_l**4, 0), (theta_l**4, 0), (theta_l**2, 0), (phi*theta, 0), (phi**2, 0), (theta**2, 0), (phi**4, 0), (theta**4, 0)])
+thetaddot_lin = thetaddot.subs([(sin(phi), phi), (sin(theta), theta), (cos(phi), 1), (cos(theta), 1), (psi, 0), (theta_ldot, 0), (phi_ldot, 0), (sin(theta_l), theta_l), (sin(phi_l), phi_l), (cos(theta_l), 1), (cos(phi_l), 1), (phidot, 0), (thetadot, 0), (psidot, 0), (phi_l*theta_l, 0), (phi_l**2, 0), (phi_l**4, 0), (theta_l**4, 0), (theta_l**2, 0), (phi*theta, 0), (phi**2, 0), (theta**2, 0), (phi**4, 0), (theta**4, 0)])
+psiddot_lin = psiddot.subs([(sin(phi), phi), (sin(theta), theta), (cos(phi), 1), (cos(theta), 1), (psi, 0), (theta_ldot, 0), (phi_ldot, 0), (sin(theta_l), theta_l), (sin(phi_l), phi_l), (cos(theta_l), 1), (cos(phi_l), 1), (phidot, 0), (thetadot, 0), (psidot, 0), (phi_l*theta_l, 0), (phi_l**2, 0), (phi_l**4, 0), (theta_l**4, 0), (theta_l**2, 0), (phi*theta, 0), (phi**2, 0), (theta**2, 0), (phi**4, 0), (theta**4, 0)])
+
+print('xddot_lin',sy.simplify(xddot_lin))
+print('yddot_lin',sy.simplify(yddot_lin))
+print('zddot_lin',sy.simplify(zddot_lin))
+print('thetalddot_lin',sy.simplify(thetalddot_lin))
+print('philddot_lin',sy.simplify(philddot_lin))
+print('phiddot_lin',sy.simplify(phiddot_lin))
+print('thetaddot_lin',sy.simplify(thetaddot_lin))
+print('psiddot_lin',sy.simplify(psiddot_lin))
+
+print(EOM[0])
+print('\n')
+print(EOM[1])
+print('\n')
+print(EOM[2])
+print('\n')
+print(EOM[3])
+print('\n')
+print(EOM[4])
+print('\n')
+print(EOM[5])
+print('\n')
+print(EOM[6])
+print('\n')
+print(EOM[7])
+print('\n')

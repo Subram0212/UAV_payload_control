@@ -6,7 +6,6 @@ from scipy.integrate import odeint
 #from mpl_toolkits.mplot3d import art3d
 import mpl_toolkits.mplot3d.axes3d as p3
 from controller import Controller
-import control as ctrl
 
 
 class parameters:
@@ -202,6 +201,7 @@ def eom(X,t,m_q,m_l,Ixx,Iyy,Izz,g,l,cable_l,K,b,Ax,Ay,Az,omega1,omega2,omega3,om
 
     A = np.zeros((8,8))
     B = np.zeros((8,1))
+    B_ctrl = np.zeros((8,4))
 
     A[ 0 , 0 ]= 1.0*m_l + 1.0*m_q
     A[ 0 , 1 ]= 0
@@ -275,7 +275,42 @@ def eom(X,t,m_q,m_l,Ixx,Iyy,Izz,g,l,cable_l,K,b,Ax,Ay,Az,omega1,omega2,omega3,om
     B[ 5 ]= Ixx*psidot*thetadot*cos(theta) - K*l*(omega2**2 - omega4**2) + psidot*(psidot*(Iyy - Izz)*(sin(2*phi - theta) + sin(2*phi + theta)) - 2.0*thetadot*(-Iyy + Izz)*cos(2*phi))*cos(theta)/4 - thetadot*(psidot*(-Iyy + Izz)*cos(2*phi)*cos(theta) + thetadot*(Iyy - Izz)*sin(2*phi))/2
     B[ 6 ]= -0.5*Ixx*phidot*psidot*cos(theta) - K*l*(omega1**2 - omega3**2) - 1.0*phidot*(psidot*(Iyy - Izz)*cos(2*phi)*cos(theta) - thetadot*(Iyy - Izz)*sin(2*phi)) + 0.125*psidot*thetadot*(Iyy - Izz)*(cos(2*phi - theta) - cos(2*phi + theta)) - psidot*(0.5*Ixx*phidot*cos(theta) + psidot*(-Ixx + Iyy*sin(phi)**2 + Izz*cos(phi)**2)*sin(theta)*cos(theta) + 0.125*thetadot*(Iyy - Izz)*(cos(2*phi - theta) - cos(2*phi + theta)))
     B[ 7 ]= b*(omega1**2 - omega2**2 + omega3**2 - omega4**2) - phidot*(0.5*psidot*(Iyy - Izz)*(sin(2*phi - theta) + sin(2*phi + theta)) - 1.0*thetadot*(-Iyy + Izz)*cos(2*phi))*cos(theta) + thetadot*(1.0*Ixx*phidot*cos(theta) + 2.0*psidot*(-Ixx + Iyy*sin(phi)**2 + Izz*cos(phi)**2)*sin(theta)*cos(theta) + 0.25*thetadot*(Iyy - Izz)*(cos(2*phi - theta) - cos(2*phi + theta)))
+    B_ctrl[ 0 , 0 ]= sin(phi)*sin(psi) + sin(theta)*cos(phi)*cos(psi)
+    B_ctrl[ 0 , 1 ]= 0
+    B_ctrl[ 0 , 2 ]= 0
+    B_ctrl[ 0 , 3 ]= 0
+    B_ctrl[ 1 , 0 ]= -sin(phi)*cos(psi) + sin(psi)*sin(theta)*cos(phi)
+    B_ctrl[ 1 , 1 ]= 0
+    B_ctrl[ 1 , 2 ]= 0
+    B_ctrl[ 1 , 3 ]= 0
+    B_ctrl[ 2 , 0 ]= cos(phi)*cos(theta)
+    B_ctrl[ 2 , 1 ]= 0
+    B_ctrl[ 2 , 2 ]= 0
+    B_ctrl[ 2 , 3 ]= 0
+    B_ctrl[ 3 , 0 ]= 0
+    B_ctrl[ 3 , 1 ]= 0
+    B_ctrl[ 3 , 2 ]= 0
+    B_ctrl[ 3 , 3 ]= 0
+    B_ctrl[ 4 , 0 ]= 0
+    B_ctrl[ 4 , 1 ]= 0
+    B_ctrl[ 4 , 2 ]= 0
+    B_ctrl[ 4 , 3 ]= 0
+    B_ctrl[ 5 , 0 ]= 0
+    B_ctrl[ 5 , 1 ]= 1
+    B_ctrl[ 5 , 2 ]= 0
+    B_ctrl[ 5 , 3 ]= 0
+    B_ctrl[ 6 , 0 ]= 0
+    B_ctrl[ 6 , 1 ]= 0
+    B_ctrl[ 6 , 2 ]= 1
+    B_ctrl[ 6 , 3 ]= 0
+    B_ctrl[ 7 , 0 ]= 0
+    B_ctrl[ 7 , 1 ]= 0
+    B_ctrl[ 7 , 2 ]= 0
+    B_ctrl[ 7 , 3 ]= 1
     invA = np.linalg.inv(A)
+    val = invA.dot(B_ctrl)
+    inv_val = np.linalg.pinv(val)
+    print(inv_val)
     Xddot = invA.dot(B)
     i = 0
     ax = Xddot[i,0]; i+=1
@@ -287,61 +322,9 @@ def eom(X,t,m_q,m_l,Ixx,Iyy,Izz,g,l,cable_l,K,b,Ax,Ay,Az,omega1,omega2,omega3,om
     thetaddot = Xddot[i,0]; i+=1
     psiddot = Xddot[i,0]; i+=1
 
+
     dXdt = np.array([vx, vy, vz, theta_ldot, phi_ldot, phidot, thetadot, psidot, ax, ay, az, theta_lddot, phi_lddot, phiddot,thetaddot,psiddot])
     return dXdt
-
-
-def controller(X, omega):
-    m = m_l + m_q
-    A_np = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
-                     [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-                     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-                     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
-                     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
-                     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
-                     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
-                     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-                     [0, 0, 0, 0, -(m_l/m_q)*(l/cable_l)*g, 0, -(m/m_q)*g, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                     [0, 0, 0, (m_l/m_q)*(l/cable_l)*g, 0, -(m/m_q)*g, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                     [0, 0, 0, 0, 0, g/cable_l, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                     [0, 0, 0, 0, 0, 0, g/cable_l, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                     [0, 0, 0, 0, 0, 0, 1/Izz, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
-
-    B_np = np.array([[0, 0, 0, 0],
-                     [0, 0, 0, 0],
-                     [0, 0, 0, 0],
-                     [0, 0, 0, 0],
-                     [0, 0, 0, 0],
-                     [0, 0, 0, 0],
-                     [0, 0, 0, 0],
-                     [0, 0, 0, 0],
-                     [0, 0, 0, 0],
-                     [0, 0, 0, 0],
-                     [-g+(k/(m_l+m_q)), -g+(k/(m_l+m_q)), -g+(k/(m_l+m_q)), -g+(k/(m_l+m_q))],
-                     [0, 0, 0, 0],
-                     [0, 0, 0, 0],
-                     [0, -l*k/Ixx, 0, l*k/Ixx],
-                     [-l*k/Iyy, 0, l*k/Iyy, 0],
-                     [b/Izz, -b/Izz, b/Izz, -b/Izz]])
-
-    # controllability_test = control.ctrb(A_np, B_np)
-    # print(controllability_test)
-    # ctrb_rank = np.linalg.matrix_rank(controllability_test)
-    # print(ctrb_rank)
-    Q = np.eye(16)
-    R = 1e-5*np.eye(4) # np.zeros((4, 4))
-    K, P, E = ctrl.lqr(A_np, B_np, Q, R)
-    U = -K.dot(X[1])
-    omega1 = omega[0]**2 + U[0]
-    omega2 = omega[1]**2 + U[1]
-    omega3 = omega[2]**2 + U[2]
-    omega4 = omega[3]**2 + U[3]
-    omega_vals = np.array([np.sqrt(omega1), np.sqrt(omega2), np.sqrt(omega3), np.sqrt(omega4)], dtype='float64')
-    return omega_vals
-    # print("Feedback gain values are: {}".format(K))
 
 
 parms = parameters()
@@ -375,7 +358,6 @@ omega_x=[]; omega_y=[]; omega_z = []
 omega_body_x=[]; omega_body_y=[]; omega_body_z = []
 m_q = parms.m_q
 m_l = parms.m_l
-b = parms.b
 cable_l = parms.cable_l
 g = parms.g
 Ixx = parms.Ixx
@@ -436,12 +418,11 @@ for i in range(0, N-1):
                  parms.K,parms.b,parms.Ax,parms.Ay,parms.Az,
                  parms.omega1,parms.omega2,parms.omega3,parms.omega4)
     X = odeint(eom, X0, t_temp, args=all_parms)
-    # ang = np.array([[X[1][3], X[1][9]], [X[1][4], X[1][10]], [X[1][5], X[1][11]]], dtype='float64')
-    # translation = np.array([[X[1][0], X[1][6]], [X[1][1], X[1][7]], [X[1][2], X[1][8]]], dtype='float64')
-    # vertical = translation[2]
-    # torques, theta_temp, psi_temp = control._get_torques(vertical, ang, desired_state)
-    # omega = control.get_action(desired_state, ang, translation)
-    omega = controller(X, omega)
+    ang = np.array([[X[1][3], X[1][9]], [X[1][4], X[1][10]], [X[1][5], X[1][11]]], dtype='float64')
+    translation = np.array([[X[1][0], X[1][6]], [X[1][1], X[1][7]], [X[1][2], X[1][8]]], dtype='float64')
+    vertical = translation[2]
+    torques, theta_temp, psi_temp = control._get_torques(vertical, ang, desired_state)
+    omega = control.get_action(desired_state, ang, translation)
     omega_temp = omega.reshape(4,)
     parms.omega1, parms.omega2, parms.omega3, parms.omega4 = omega
     X0 = X[1]
