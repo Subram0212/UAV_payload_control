@@ -23,6 +23,8 @@ K,l,b, cable_l, Ax,Ay,Az = sy.symbols('K l b cable_l Ax Ay Az', real=True)
 u1,u2,u3,u4 = sy.symbols('u1 u2 u3 u4', real=True)
 kpx, kpy, kpz, kppsi = sy.symbols('kpx kpy kpz kppsi', real=True)
 kdx, kdy, kdz, kdpsi = sy.symbols('kdx kdy kdz kdpsi', real=True)
+phi_d, theta_d = sy.symbols('phi_d theta_d', real=True)
+v_linx, v_liny, v_linz = sy.symbols('v_linx v_liny v_linz', real=True)
 
 
 # %%%%%%% unit vectors %%%%%%%
@@ -213,6 +215,10 @@ for ii in range(0,mm):
     for jj in range(0,nn):
         print('B_ctrl[',ii,',',jj,']=',sy.simplify(B_control[ii,jj]))
 
+mm = len(D_sym)
+for ii in range(0,mm):
+    print('D[',ii,']=',sy.simplify(D_sym[ii]))
+
 #world frame velocity
 angdot = sy.Matrix([phidot, thetadot, psidot])
 
@@ -229,6 +235,63 @@ for ii in range(0,mm):
     for jj in range(0,nn):
         print('R_be[',ii,',',jj,']=',sy.simplify(R_be[ii,jj]))
 
+
+# print("The xddot EOM is: \n")
+# print(sy.simplify(EOM[0]))
+# print("The yddot EOM is: \n")
+# print(sy.simplify(EOM[1]))
+# print("The zddot EOM is: \n")
+# print(sy.simplify(EOM[2]))
+# print("The theta_l EOM is: \n")
+# print(sy.simplify(EOM[3]))
+# print("The phi_l EOM is: \n")
+# print(sy.simplify(EOM[4]))
+# print("The phi EOM is: \n")
+# print(sy.simplify(EOM[5]))
+# print("The theta EOM is: \n")
+# print(sy.simplify(EOM[6]))
+# print("The psi EOM is: \n")
+# print(sy.simplify(EOM[7]))
+
+
+invA = A.inv()
+xddot = invA.dot(B)
+# print("The xddot of pendulum is: \n")
+# print(sy.simplify(xddot[0]))
+# print("The yddot of pendulum is: \n")
+# print(sy.simplify(xddot[1]))
+# print("The zddot of pendulum is: \n")
+# print(sy.simplify(xddot[2]))
+# print("The theta_l of pendulum is: \n")
+# print(sy.simplify(xddot[3]))
+# print("The phi_l of pendulum is: \n")
+# print(sy.simplify(xddot[4]))
+# print("The phi of pendulum is: \n")
+# print(sy.simplify(xddot[5]))
+# print("The theta of pendulum is: \n")
+# print(sy.simplify(xddot[6]))
+# print("The psi of pendulum is: \n")
+# print(sy.simplify(xddot[7]))
+
+xddot_desangs = xddot[0].subs([(cos(phi), 1), (sin(phi), phi_d), (cos(theta), 1), (sin(theta), theta_d)])
+yddot_desangs = xddot[1].subs([(cos(phi), 1), (sin(phi), phi_d), (cos(theta), 1), (sin(theta), theta_d)])
+zddot_desangs = xddot[2].subs([(cos(phi), 1), (sin(phi), phi_d), (cos(theta), 1), (sin(theta), theta_d)])
+
+print("The xddot of pendulum with desired roll and pitch angles is: \n")
+print(sy.simplify(xddot_desangs))
+print("The yddot of pendulum with desired roll and pitch angles is: \n")
+print(sy.simplify(yddot_desangs))
+print("The zddot of pendulum with desired roll and pitch angles is: \n")
+print(sy.simplify(zddot_desangs))
+
+'''If its running too slow, remove drag equations and run again!!'''
+eq1 = sy.Eq((-cable_l**2*m_l*m_q*phi_ldot**2*sin(phi_l)*cos(theta_l)**3 - cable_l**2*m_l*m_q*theta_ldot**2*sin(phi_l)*cos(theta_l) + cable_l*g*m_l**2*sin(phi_l)*cos(phi_l)*cos(theta_l)**2 + cable_l*g*m_l*m_q*sin(phi_l)*cos(phi_l)*cos(theta_l)**2 - cable_l*m_l*phi_d*u1*sin(phi_l)*sin(theta_l)*cos(psi)*cos(theta_l) + cable_l*m_l*phi_d*u1*sin(psi)*cos(phi_l)**2*cos(theta_l)**2 - cable_l*m_l*phi_d*u1*sin(psi)*cos(theta_l)**2 + cable_l*m_l*phi_d*u1*sin(psi) + cable_l*m_l*theta_d*u1*sin(phi_l)*sin(psi)*sin(theta_l)*cos(theta_l) + cable_l*m_l*theta_d*u1*cos(phi_l)**2*cos(psi)*cos(theta_l)**2 - cable_l*m_l*theta_d*u1*cos(psi)*cos(theta_l)**2 + cable_l*m_l*theta_d*u1*cos(psi) - cable_l*m_l*u1*sin(phi_l)*cos(phi_l)*cos(theta_l)**2 + cable_l*m_q*phi_d*u1*sin(psi) + cable_l*m_q*theta_d*u1*cos(psi) - g*l*m_l**2*sin(phi_l)*cos(phi_l)*cos(theta_l)**2 - g*l*m_l*m_q*sin(phi_l)*cos(phi_l)*cos(theta_l)**2)/(cable_l*m_q*(m_l + m_q)), v_linx)
+eq2 = sy.Eq((cable_l**2*m_l*m_q*phi_ldot**2*sin(theta_l)/4 + cable_l**2*m_l*m_q*phi_ldot**2*sin(3*theta_l)/4 + cable_l**2*m_l*m_q*theta_ldot**2*sin(theta_l) + cable_l*g*m_l**2*sin(phi_l - 2*theta_l)/4 - cable_l*g*m_l**2*sin(phi_l + 2*theta_l)/4 + cable_l*g*m_l*m_q*sin(phi_l - 2*theta_l)/4 - cable_l*g*m_l*m_q*sin(phi_l + 2*theta_l)/4 + cable_l*m_l*phi_d*u1*sin(-phi_l + psi + 2*theta_l)/8 + cable_l*m_l*phi_d*u1*sin(phi_l - psi + 2*theta_l)/8 + cable_l*m_l*phi_d*u1*sin(phi_l + psi - 2*theta_l)/8 - cable_l*m_l*phi_d*u1*sin(phi_l + psi + 2*theta_l)/8 - cable_l*m_l*phi_d*u1*cos(psi)/2 - cable_l*m_l*phi_d*u1*cos(psi - 2*theta_l)/4 - cable_l*m_l*phi_d*u1*cos(psi + 2*theta_l)/4 + cable_l*m_l*theta_d*u1*sin(psi)/2 + cable_l*m_l*theta_d*u1*sin(psi - 2*theta_l)/4 + cable_l*m_l*theta_d*u1*sin(psi + 2*theta_l)/4 + cable_l*m_l*theta_d*u1*cos(-phi_l + psi + 2*theta_l)/8 - cable_l*m_l*theta_d*u1*cos(phi_l - psi + 2*theta_l)/8 + cable_l*m_l*theta_d*u1*cos(phi_l + psi - 2*theta_l)/8 - cable_l*m_l*theta_d*u1*cos(phi_l + psi + 2*theta_l)/8 - cable_l*m_l*u1*sin(phi_l - 2*theta_l)/4 + cable_l*m_l*u1*sin(phi_l + 2*theta_l)/4 - cable_l*m_q*phi_d*u1*cos(psi) + cable_l*m_q*theta_d*u1*sin(psi) - g*l*m_l**2*sin(phi_l - 2*theta_l)/4 + g*l*m_l**2*sin(phi_l + 2*theta_l)/4 - g*l*m_l*m_q*sin(phi_l - 2*theta_l)/4 + g*l*m_l*m_q*sin(phi_l + 2*theta_l)/4)/(cable_l*m_q*(m_l + m_q)), v_liny)
+eq3 = sy.Eq((-1.0*cable_l**2*m_l*m_q*phi_ldot**2*cos(phi_l)*cos(theta_l)**3 - 1.0*cable_l**2*m_l*m_q*theta_ldot**2*cos(phi_l)*cos(theta_l) + 1.0*cable_l*g*m_l**2*cos(phi_l)**2*cos(theta_l)**2 - 1.0*cable_l*g*m_l**2 + 1.0*cable_l*g*m_l*m_q*cos(phi_l)**2*cos(theta_l)**2 - 2.0*cable_l*g*m_l*m_q - 1.0*cable_l*g*m_q**2 - 1.0*cable_l*m_l*phi_d*u1*sin(phi_l)*sin(psi)*cos(phi_l)*cos(theta_l)**2 - 1.0*cable_l*m_l*phi_d*u1*sin(theta_l)*cos(phi_l)*cos(psi)*cos(theta_l) - 1.0*cable_l*m_l*theta_d*u1*sin(phi_l)*cos(phi_l)*cos(psi)*cos(theta_l)**2 + 1.0*cable_l*m_l*theta_d*u1*sin(psi)*sin(theta_l)*cos(phi_l)*cos(theta_l) - 1.0*cable_l*m_l*u1*cos(phi_l)**2*cos(theta_l)**2 + 1.0*cable_l*m_l*u1 + 1.0*cable_l*m_q*u1 - 1.0*g*l*m_l**2*cos(phi_l)**2*cos(theta_l)**2 + 1.0*g*l*m_l**2 - 1.0*g*l*m_l*m_q*cos(phi_l)**2*cos(theta_l)**2 + 1.0*g*l*m_l*m_q)/(cable_l*m_q*(m_l + m_q)), v_linz)
+
+result = sy.solve([eq1, eq2, eq3], (theta_d, phi_d, u1))
+print(result)
+
 # u = sy.Matrix([u1, u2, u3, u4])
 # B_control = sy.Matrix([[0, 0, 0, 0],
 #                [0, 0, 0, 0],
@@ -242,7 +305,7 @@ for ii in range(0,mm):
 #
 # T_ext = B_control*u
 # control_ip = T_ext + D_mat
-Ainv = A.inv()
+# Ainv = A.inv()
 # xddot = Ainv.dot(control_ip)  # Have a check on this kind of manipulation in case solution isn't obtained.
 
 
@@ -255,37 +318,37 @@ Ainv = A.inv()
 # print('thetaddot',sy.simplify(xddot[6]))
 # print('psiddot',sy.simplify(xddot[7]))
 
-selection_matrix = sy.diag(1, 1, 1, 0, 0, 0, 0, 1)
-selected_A = selection_matrix*A
-selected_A = sy.Matrix([[selected_A[0], selected_A[1], selected_A[2], selected_A[7]],
-                        [selected_A[8], selected_A[9], selected_A[10], selected_A[15]],
-                        [selected_A[16], selected_A[17], selected_A[18], selected_A[23]],
-                        [selected_A[56], selected_A[57], selected_A[58], selected_A[63]]])
-selected_B = selection_matrix*B_control
-selected_B = sy.Matrix([[selected_B[0], selected_B[1], selected_B[2], selected_B[3]],
-                        [selected_B[4], selected_B[5], selected_B[6], selected_B[7]],
-                        [selected_B[8], selected_B[9], selected_B[10], selected_B[11]],
-                        [selected_B[28], selected_B[29], selected_B[30], selected_B[31]]])
-selected_D = selection_matrix*D_sym
-selected_D = sy.Matrix([selected_D[0], selected_D[1], selected_D[2], selected_D[7]])
-
-v_x = axd + kdx*(vxd - vx) + kpx*(xd - x)
-v_y = ayd + kdy*(vyd - vy) + kpy*(yd - y)
-v_z = azd + kdz*(vzd - vz) + kpz*(zd - z)
-v_thetal = 0
-v_phil = 0
-v_phi = 0
-v_theta = 0
-v_psi = kdpsi*(psidesdot - psidot) + kppsi*(psid - psi)
-
-val = Ainv*B_control
-inverse_val = val.pinv(method='ED')
-
-V = sy.Matrix([v_x, v_y, v_z, v_psi])
-selected_Ainv = selected_A.inv()
-selected_Binv = selected_B.inv()
-val = selected_Ainv*selected_B
-inverse_val = val.inv()
-AinvD = Ainv*selected_D
-
-U = selection_matrix*inverse_val*V + selection_matrix*inverse_val*AinvD
+# selection_matrix = sy.diag(1, 1, 1, 0, 0, 0, 0, 1)
+# selected_A = selection_matrix*A
+# selected_A = sy.Matrix([[selected_A[0], selected_A[1], selected_A[2], selected_A[7]],
+#                         [selected_A[8], selected_A[9], selected_A[10], selected_A[15]],
+#                         [selected_A[16], selected_A[17], selected_A[18], selected_A[23]],
+#                         [selected_A[56], selected_A[57], selected_A[58], selected_A[63]]])
+# selected_B = selection_matrix*B_control
+# selected_B = sy.Matrix([[selected_B[0], selected_B[1], selected_B[2], selected_B[3]],
+#                         [selected_B[4], selected_B[5], selected_B[6], selected_B[7]],
+#                         [selected_B[8], selected_B[9], selected_B[10], selected_B[11]],
+#                         [selected_B[28], selected_B[29], selected_B[30], selected_B[31]]])
+# selected_D = selection_matrix*D_sym
+# selected_D = sy.Matrix([selected_D[0], selected_D[1], selected_D[2], selected_D[7]])
+#
+# v_x = axd + kdx*(vxd - vx) + kpx*(xd - x)
+# v_y = ayd + kdy*(vyd - vy) + kpy*(yd - y)
+# v_z = azd + kdz*(vzd - vz) + kpz*(zd - z)
+# v_thetal = 0
+# v_phil = 0
+# v_phi = 0
+# v_theta = 0
+# v_psi = kdpsi*(psidesdot - psidot) + kppsi*(psid - psi)
+#
+# val = Ainv*B_control
+# inverse_val = val.pinv(method='ED')
+#
+# V = sy.Matrix([v_x, v_y, v_z, v_psi])
+# selected_Ainv = selected_A.inv()
+# selected_Binv = selected_B.inv()
+# val = selected_Ainv*selected_B
+# inverse_val = val.inv()
+# AinvD = Ainv*selected_D
+#
+# U = selection_matrix*inverse_val*V + selection_matrix*inverse_val*AinvD
