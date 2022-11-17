@@ -22,27 +22,29 @@ class parameters:
         self.cable_l = 0.2
         self.K = 2.980*1e-6
         self.b = 1.14*1e-7
-        self.Ax = 0.25
-        self.Ay = 0.25
-        self.Az = 0.25
+        self.Ax = 0
+        self.Ay = 0
+        self.Az = 0
         self.pause = 0.01
-        self.fps = 30
+        self.fps = 10
         self.K_z = np.array([1, 2])
-        self.K_phi = np.array([4, 4])
-        self.K_theta = np.array([4, 4])
-        self.K_psi = np.array([-8, -8])
-        self.Kp = np.array([10, 10, 10, 10], dtype='float64')
-        self.Kd = np.array([7, 7, 7, 7], dtype='float64')
-        self.Kdd = np.array([1.00, 1.00, 1.00])
-        self.Ki = np.array([1.5, 1.5, 1.5])
+        self.K_phi = np.array([2, 0.75])
+        self.K_theta = np.array([2, 0.75])
+        self.K_psi = np.array([2, 0.75])
+        self.Kp = np.array([2, 2, 10, 2], dtype='float64')
+        self.Kd = np.array([0.75*2, 0.75*2, 0.75*5, 0.75], dtype='float64')
+        self.Kdd = np.array([1.00, 1.00, 1.00*3, 1.00])
+        self.Ki = np.array([1.5*3, 1.5*3, 1.5*3, 1.5])
 
         omega = 1
         speed = omega*np.sqrt(1/self.K)
         dspeed = 0.05*speed
-        self.u1 = (self.m_l+self.m_q)*self.g
+        self.u1 = 0
         self.u2 = 0
         self.u3 = 0
         self.u4 = 0
+        self.theta_d = 0
+        self.phi_d = 0
 
 def cos(angle):
     return np.cos(angle)
@@ -428,14 +430,26 @@ def EOM_matrices(X,m_q,m_l,Ixx,Iyy,Izz,g,l,cable_l,K,b,Ax,Ay,Az,u1,u2,u3,u4):
     D[ 6 ]= 1.0*Ixx*phidot*psidot*cos(theta) - Ixx*psidot**2*sin(theta)*cos(theta) + 1.0*Iyy*phidot*psidot*cos(2*phi)*cos(theta) - 1.0*Iyy*phidot*thetadot*sin(2*phi) + Iyy*psidot**2*sin(phi)**2*sin(theta)*cos(theta) - 1.0*Izz*phidot*psidot*cos(2*phi)*cos(theta) + 1.0*Izz*phidot*thetadot*sin(2*phi) + Izz*psidot**2*sin(theta)*cos(phi)**2*cos(theta)
     D[ 7 ]= phidot*(0.5*psidot*(Iyy - Izz)*(sin(2*phi - theta) + sin(2*phi + theta)) - 1.0*thetadot*(-Iyy + Izz)*cos(2*phi))*cos(theta) - thetadot*(1.0*Ixx*phidot*cos(theta) + 2.0*psidot*(-Ixx + Iyy*sin(phi)**2 + Izz*cos(phi)**2)*sin(theta)*cos(theta) + 0.25*thetadot*(Iyy - Izz)*(cos(2*phi - theta) - cos(2*phi + theta)))
     invA = np.linalg.inv(A)
+    Xddot = invA.dot(B)
+    i = 0
+    ax = Xddot[i,0]; i+=1
+    ay = Xddot[i,0]; i+=1
+    az = Xddot[i,0]; i+=1
+    theta_lddot = Xddot[i,0]; i += 1
+    phi_lddot = Xddot[i,0]; i += 1
+    phiddot = Xddot[i,0]; i+=1
+    thetaddot = Xddot[i,0]; i+=1
+    psiddot = Xddot[i,0]; i+=1
 
-    return invA, B_ctrl, D
+    dXdt = np.array([vx, vy, vz, theta_ldot, phi_ldot, phidot, thetadot, psidot, ax, ay, az, theta_lddot, phi_lddot, phiddot,thetaddot,psiddot])
+
+    return invA, B_ctrl, D, dXdt
 
 
 parms = parameters()
-h = 0.005
+h = 0.01
 t0 = 0
-tN = 10
+tN = 60
 N = int((tN-t0)/h) + 1
 t = np.linspace(t0, tN, N)
 T = t[N-1]
@@ -447,10 +461,10 @@ B = 0.5
 a = 2
 b = 1
 mpi = np.pi
-phi = np.zeros(N)
-phidot = np.zeros(N)
-phiddot = np.zeros(N)
-phitdot = np.zeros(N)
+# phi = np.zeros(N)
+# phidot = np.zeros(N)
+# phiddot = np.zeros(N)
+# phitdot = np.zeros(N)
 
 tau = 2*mpi*(-15*(t/T)**4+6*(t/T)**5+10*(t/T)**3)
 taudot = 2*mpi*(-15*4*(1/T)*(t/T)**3+6*5*(1/T)*(t/T)**4+10*3*(1/T)*(t/T)**2)
@@ -489,7 +503,7 @@ a_z = np.zeros(N)
 
 x0 = 0; y0 = 0; z0 = 1
 vx0 = 0; vy0 = 0; vz0 = 0
-phi0 = np.deg2rad(0); theta0 = np.deg2rad(0); psi0 = np.deg2rad(0)
+phi0 = np.deg2rad(10); theta0 = np.deg2rad(10); psi0 = np.deg2rad(10)
 phidot0 = 0; thetadot0 = 0; psidot0 = 0
 theta_l0 = 0; phi_l0 = 0
 thetadot_l0 = 0; phidot_l0 = 0
@@ -525,12 +539,14 @@ Izz = parms.Izz
 # a_z = np.zeros(N)
 theta_ldes = np.zeros(N)
 phi_ldes = np.zeros(N)
-# phi = np.zeros(N)
+psi_des = np.zeros(N)
+psi_desdot = np.zeros(N)
+psi_desddot = np.zeros(N)
 # phidot = np.zeros(N)
-theta = np.zeros(N)
-thetadot = np.zeros(N)
-psi = np.zeros(N)
-psidot = np.zeros(N)
+# theta = np.zeros(N)
+# thetadot = np.zeros(N)
+# psi = np.zeros(N)
+# psidot = np.zeros(N)
 K_z = parms.K_z
 K_phi = parms.K_phi
 K_theta = parms.K_theta
@@ -565,27 +581,39 @@ X_ANG[0, 5] = X0[15]
 
 for i in range(0, N-1):
     j = 0
-    control_vars = Controller_fdbklin(Kp, Kd)
+    control_vars = Controller_fdbklin(Kp, Kd, Kdd, Ki, K_phi, K_theta, K_psi, Ixx, Iyy, Izz)
     t_temp = np.array([t[i], t[i+1]], dtype='float64')
     # desired_state = control.get_desired_positions(t_temp, desired_traj_values)
     # desired_state = np.array([z_ref[i], v_z[i], theta[i], thetadot[i], psi[i], psidot[i], phi[i], phidot[i]])
     all_parms = (parms.m_q,parms.m_l,parms.Ixx,parms.Iyy,parms.Izz,parms.g,parms.l,parms.cable_l,
                  parms.K,parms.b,parms.Ax,parms.Ay,parms.Az,
                  parms.u1,parms.u2,parms.u3,parms.u4)
-    invA, B, D = EOM_matrices(X0, parms.m_q,parms.m_l,parms.Ixx,parms.Iyy,parms.Izz,parms.g,parms.l,parms.cable_l,
+    invA, B, D, xddot = EOM_matrices(X0, parms.m_q,parms.m_l,parms.Ixx,parms.Iyy,parms.Izz,parms.g,parms.l,parms.cable_l,
                               parms.K,parms.b,parms.Ax,parms.Ay,parms.Az,
                               parms.u1,parms.u2,parms.u3,parms.u4)
     X = odeint(eom, X0, t_temp, args=all_parms)
+    phi = X[1][5]
+    phidot = X[1][13]
+    theta = X[1][6]
+    thetadot = X[1][14]
+    psi = X[1][7]
+    psidot = X[1][15]
     # ang = np.array([[X[1][3], X[1][9]], [X[1][4], X[1][10]], [X[1][5], X[1][11]]], dtype='float64')
     # translation = np.array([[X[1][0], X[1][6]], [X[1][1], X[1][7]], [X[1][2], X[1][8]]], dtype='float64')
     # vertical = translation[2]
     # torques, theta_temp, psi_temp = control._get_torques(vertical, ang, desired_state)
     # omega = control.get_action(desired_state, ang, translation)
-    u_vals = control_vars.get_desired_positions(invA, B, D, X[1], x_ref[i], y_ref[i], z_ref[i], phi[i], v_x[i], v_y[i], v_z[i], phidot[i], a_x[i], a_y[i], a_z[i],parms.m_q,parms.m_l,parms.Ixx,parms.Iyy,parms.Izz,parms.g,parms.l,parms.cable_l,
+    u_vals, phi_des, theta_des = control_vars.get_desired_positions(t_temp, invA, B, D, X[1], xddot, x_ref[i], y_ref[i], z_ref[i], psi_des[i], v_x[i], v_y[i], v_z[i], psi_desdot[i], a_x[i], a_y[i], a_z[i], psi_desddot[i], parms.m_q,parms.m_l,parms.Ixx,parms.Iyy,parms.Izz,parms.g,parms.l,parms.cable_l,
                                                 parms.K,parms.b,parms.Ax,parms.Ay,parms.Az,
                                                 parms.u1,parms.u2,parms.u3,parms.u4)
     parms.u1, parms.u2, parms.u3, parms.u4 = u_vals
-    u_vals_temp = u_vals.reshape(4,)
+    ang = np.array([phi, phidot, theta, thetadot, psi, psidot], dtype='float64')
+    THETA_DES_STATE = np.array([phi_des, theta_des, psi_des[i]], dtype='float64')
+    T_phi, T_theta, T_psi = control_vars.control_action(ang, THETA_DES_STATE)
+    parms.u2 = T_phi
+    parms.u3 = T_theta
+    parms.u4 = T_psi
+    u_vals = u_vals.reshape(4,)
     X0 = X[1]
     X_VAL.append(X[1][j]); j+=1;
     Y.append(X[1][j]); j+=1;
@@ -618,29 +646,29 @@ for i in range(0, N-1):
     X_ANG[i+1, 5] = X[1][15]
     # X_pos.append(np.array([X_VAL[i], Y[i], Z[i]]))
     # X_ang.append(np.array([PHI[i], THETA[i], PSI[i]]))
-    OMEGA[i+1] = u_vals_temp
+    OMEGA[i+1] = u_vals
 
 plt.figure(1)
-plt.subplot(3,1,1)
+plt.subplot(2,1,1)
 plt.plot(t,X_VAL);
 plt.plot(t,Y)
 plt.plot(t,Z)
 plt.ylabel('linear position');
 plt.legend(['x_pos', 'y_pos', 'z_pos'])
-plt.subplot(3,1,2)
-plt.plot(t,VX);
-plt.plot(t,VY)
-plt.plot(t,VZ)
-plt.xlabel('time')
-plt.ylabel('linear velocity');
-plt.legend(['x_vel', 'y_vel', 'z_vel'])
-plt.subplot(3,1,3)
+plt.subplot(2,1,2)
 plt.plot(t,PHI);
 plt.plot(t,THETA)
 plt.plot(t,PSI)
 plt.xlabel('time')
 plt.ylabel('angular position');
 plt.legend(['Angle phi', 'Angle theta', 'Angle psi'])
+# plt.subplot(3,1,3)
+# plt.plot(t,PHI);
+# plt.plot(t,THETA)
+# plt.plot(t,PSI)
+# plt.xlabel('time')
+# plt.ylabel('angular position');
+# plt.legend(['Angle phi', 'Angle theta', 'Angle psi'])
 
 # plt.figure(2)
 # plt.subplot(2,1,1)
@@ -660,12 +688,12 @@ plt.legend(['Angle phi', 'Angle theta', 'Angle psi'])
 ax=plt.figure(4)
 plt.subplot(1,1,1)
 plt.plot(t,OMEGA);
-plt.ylabel('omega');
+plt.ylabel('U_values');
 # plt.subplot(2,1,2)
 # plt.plot(t,omega_body_x);
 # plt.plot(t,omega_body_y);
 # plt.plot(t,omega_body_z);
-ax.legend(['rotor1', 'rotor2','rotor3', 'rotor4'])
+ax.legend(['U1', 'U2','U3', 'U4'])
 # plt.ylabel('omega body');
 plt.xlabel('time')
 #
@@ -676,8 +704,7 @@ plt.plot(t, THETA_L)
 plt.plot(t, PHI_L)
 plt.legend(['Theta_l', 'Phi_l'])
 plt.ylabel('Load swing angles')
-plt.xlabel('time'
-           )
+plt.xlabel('time')
 #plt.show()
 plt.show(block=False)
 plt.pause(60)
