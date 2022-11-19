@@ -60,9 +60,9 @@ class Controller_fdbklin:
         self.integral_error_x += ex * t
         self.integral_error_y += ey * t
         self.integral_error_z += ez * t
-        v_x = self.kddx*(axd - ax) + self.Kxi*self.integral_error_x + self.kdx*(vxd - vx) + self.kpx*(xd - x) - 1
+        v_x = self.kddx*(axd - ax) + self.Kxi*self.integral_error_x + self.kdx*(vxd - vx) + self.kpx*(xd - x)
         v_y = self.kddx*(ayd - ay) + self.Kyi*self.integral_error_x + self.kdy*(vyd - vy) + self.kpy*(yd - y)
-        v_z = self.kddx*(azd - az) + self.Kzi*self.integral_error_x + self.kdz*(vzd - vz) + self.kpz*(zd - z) + 0.5
+        v_z = self.kddx*(azd - az) + self.Kzi*self.integral_error_x + self.kdz*(vzd - vz) + self.kpz*(zd - z)
         v_thetal = 0
         v_phil = 0
         v_phi = 0

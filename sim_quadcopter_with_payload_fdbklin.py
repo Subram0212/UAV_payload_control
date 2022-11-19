@@ -26,7 +26,7 @@ class parameters:
         self.Ay = 0.25
         self.Az = 0.25
         self.pause = 0.01
-        self.fps = 10
+        self.fps = 1
         self.K_z = np.array([1, 2])
         self.K_phi = np.array([2, 0.75])
         self.K_theta = np.array([2, 0.75])
@@ -166,8 +166,8 @@ def animate(t,Xpos,Xang,Theta_l, Phi_l, parms) -> None:
         new_load_pos[1] = y + cable_l*sin(theta_l)
         new_load_pos[2] = z - cable_l*cos(theta_l)*cos(phi_l)
 
-        ax = p3.Axes3D(fig, auto_add_to_figure=False)
-        fig.add_axes(ax)
+        ax = p3.Axes3D(fig7, auto_add_to_figure=False)
+        fig7.add_axes(ax)
         axle1, = ax.plot(new_axle_x[:, 0],new_axle_x[:, 1],new_axle_x[:, 2], 'ro-', linewidth=3)
         axle2, = ax.plot(new_axle_y[:, 0], new_axle_y[:, 1], new_axle_y[:, 2], 'bo-', linewidth=3)
         track, = plt.plot(x, y, z, color='black',marker='o',markersize=2)
@@ -449,7 +449,7 @@ def EOM_matrices(X,m_q,m_l,Ixx,Iyy,Izz,g,l,cable_l,K,b,Ax,Ay,Az,u1,u2,u3,u4):
 parms = parameters()
 h = 0.01
 t0 = 0
-tN = 240
+tN = 480
 N = int((tN-t0)/h) + 1
 t = np.linspace(t0, tN, N)
 T = t[N-1]
@@ -473,19 +473,96 @@ tautdot = 2*mpi*(-15*4*3*2*(1/T)**3*(t/T) + 6*5*4*3*(1/T)**3*(t/T)**2 + 10*3*2*(
 # taujdot = 2*mpi*(-15*4*3*2*(1/T)**3 + 6*5*4*3*2*(1/T)**4*(t/T))
 
 '''# Trajectory: Lemniscate'''
-x_ref = B*np.cos(b*tau)
-y_ref = A_const*np.sin(a*tau)
+x_ref = A_const*np.sin(a*tau)
+y_ref = B*np.cos(b*tau)
 z_ref = np.zeros(N)
 # v_x = np.zeros(N)
 # v_y = np.zeros(N)
 # a_x = np.zeros(N)
 # a_y = np.zeros(N)
-v_y = A_const*a*np.cos(a*tau)*taudot
-v_x = -B*b*np.sin(b*tau)*taudot
+v_x = A_const*a*np.cos(a*tau)*taudot
+v_y = -B*b*np.sin(b*tau)*taudot
 v_z = np.zeros(N)
-a_y = -A_const*a*a*np.sin(a*tau)*taudot+A_const*a*np.cos(a*tau)*tauddot
-a_x = -B*b*b*np.sin(b*tau)*taudot-B*b*np.sin(b*tau)*tauddot
+a_x = -A_const*a*a*np.sin(a*tau)*taudot+A_const*a*np.cos(a*tau)*tauddot
+a_y = -B*b*b*np.sin(b*tau)*taudot-B*b*np.sin(b*tau)*tauddot
 a_z = np.zeros(N)
+theta_ldes = np.zeros(N)
+phi_ldes = np.zeros(N)
+psi_des = np.zeros(N)
+psi_desdot = np.zeros(N)
+psi_desddot = np.zeros(N)
+
+
+'''# Trajectory: Circle'''
+
+# x_ref = A_const*np.cos(tau)
+# y_ref = A_const*np.sin(tau)
+# z_ref = np.zeros(N)
+# v_x = -A_const*np.sin(tau)*taudot
+# v_y = A_const*np.cos(tau)*taudot
+# v_z = np.zeros(N)
+# a_x = -A_const*np.sin(tau)*tauddot - A_const*a*np.cos(tau)*taudot
+# a_y = -A_const*np.cos(tau)*tauddot-A_const*np.sin(tau)*taudot
+# a_z = np.zeros(N)
+# j_x = np.zeros(N)
+# j_y = np.zeros(N)
+# j_z = np.zeros(N)
+
+
+'''Trajectory: Sine curve'''
+# x_ref = tau
+# y_ref = np.sin(tau)
+# z_ref = np.zeros(N)
+# v_x = taudot
+# v_y = np.cos(tau)*taudot
+# v_z = np.zeros(N)
+# a_x = tauddot
+# a_y = -np.sin(tau)*taudot + np.cos(tau)*tauddot
+# a_z = np.zeros(N)
+# j_x = np.zeros(N)
+# j_y = np.zeros(N)
+# j_z = np.zeros(N)
+
+# Shaping control parameters
+A1 = 0.27
+A2 = 0.5
+A3 = 0.23
+t1 = 0
+t2 = 0.55
+t3 = 1.11
+
+# for i in range(len(t)):
+#     if t[i] < t2:
+#         x_ref[i] = (A1) * x_ref[i]
+#         y_ref[i] = (A1) * y_ref[i]
+#         psi_des[i] = (A1) * psi_des[i]
+#         v_x[i] = (A1) * v_x[i]
+#         v_y[i] = (A1) * v_y[i]
+#         psi_desdot[i] = (A1) * psi_desdot[i]
+#         a_x[i] = (A1) * a_x[i]
+#         a_y[i] = (A1) * a_y[i]
+#         psi_desddot[i] = (A1) * psi_desddot[i]
+#     elif t2 <= t[i] < t3:
+#         x_ref[i] = (A1 + A2) * x_ref[i]
+#         y_ref[i] = (A1 + A2) * y_ref[i]
+#         psi_des[i] = (A1 + A2) * psi_des[i]
+#         v_x[i] = (A1 + A2) * v_x[i]
+#         v_y[i] = (A1 + A2) * v_y[i]
+#         psi_desdot[i] = (A1 + A2) * psi_desdot[i]
+#         a_x[i] = (A1 + A2) * a_x[i]
+#         a_y[i] = (A1 + A2) * a_y[i]
+#         psi_desddot[i] = (A1 + A2) * psi_desddot[i]
+#     else:
+#         x_ref[i] = (A1 + A2 + A3) * x_ref[i]
+#         y_ref[i] = (A1 + A2 + A3) * y_ref[i]
+#         psi_des[i] = (A1 + A2 + A3) * psi_des[i]
+#         v_x[i] = (A1 + A2 + A3) * v_x[i]
+#         v_y[i] = (A1 + A2 + A3) * v_y[i]
+#         psi_desdot[i] = (A1 + A2 + A3) * psi_desdot[i]
+#         a_x[i] = (A1 + A2 + A3) * a_x[i]
+#         a_y[i] = (A1 + A2 + A3) * a_y[i]
+#         psi_desddot[i] = (A1 + A2 + A3) * psi_desddot[i]
+
 # j_y = -A_const*a*a*a*np.cos(a*tau)*taudot-A_const*a*a*np.sin(a*tau)*tauddot - A_const*a*a*np.sin(a*tau)*tauddot + A_const*a*np.cos(a*tau)*tautdot
 # j_x = -B*b*b*b*np.cos(b*tau)*taudot-B*b*b*np.sin(b*tau)*tauddot - B*b*b*np.cos(b*tau)*tauddot-B*b*np.sin(b*tau)*tautdot
 # j_z = np.zeros(N)
@@ -537,11 +614,6 @@ Izz = parms.Izz
 # z_ref = np.zeros(N)
 # v_z = np.zeros(N)
 # a_z = np.zeros(N)
-theta_ldes = np.zeros(N)
-phi_ldes = np.zeros(N)
-psi_des = np.zeros(N)
-psi_desdot = np.zeros(N)
-psi_desddot = np.zeros(N)
 # phidot = np.zeros(N)
 # theta = np.zeros(N)
 # thetadot = np.zeros(N)
@@ -713,9 +785,9 @@ plt.plot(x_ref, y_ref, color='blue', linestyle='-')
 ax2.set_aspect('equal')
 
 plt.show(block=False)
-# plt.pause(60)
-# plt.close()
-plt.show()
+plt.pause(60)
+plt.close()
+# plt.show()
 
 #
 fig7 = plt.figure(7)

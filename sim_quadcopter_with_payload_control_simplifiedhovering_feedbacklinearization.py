@@ -112,19 +112,17 @@ def animate(t,Xpos,Xang,Phi_l,parms) -> None:
     for ii in range(0,len(t_interp)):
         x = Xpos_interp[ii,0]
         y = Xpos_interp[ii,1]
-        z = Xpos_interp[ii,2]
         theta = Xang_interp[ii,0]
-        psi = Xang_interp[ii,1]
-        phi = Xang_interp[ii,2]
-        ang = np.array([theta, psi, phi])
+        ang = np.array([theta])
         phi_l = phi_l_interp[ii]
         # R = self.Rotation_matrix(ang)
-        R = rotation(phi,theta,psi)
+        R = np.array([
+            [cos(theta), -sin(theta)],
+            [sin(theta),  cos(theta)]])
+
         R_y_phil = np.array([
-            [cos(phi_l),  0, sin(phi_l)],
-            [0,           1,          0],
-            [-sin(phi_l),  0, cos(phi_l)]
-        ])
+            [cos(phi_l), -sin(phi_l)],
+            [sin(phi_l),  cos(phi_l)]])
 
         new_axle_x = np.zeros((p2,q2))
         for i in range(0,p2):
@@ -189,6 +187,40 @@ def eom(X,t,m_q,m_l,Ixx,Iyy,Izz,g,l,cable_l,K,b,Ax,Ay,Az,u1,theta_d,tau_theta):
     return dXdt
 
 
+def figure8(x0,y0,h,t0,tN):
+
+    N = int((tN-t0)/h) + 1;
+    t = np.linspace(t0, tN,N)
+    # print(len(t))
+    T = t[N-1];
+    A = 0.5;
+    B = A;
+    a = 2;
+    b = 1;
+    pi = np.pi
+    tau = 2*pi*(-15*(t/T)**4+6*(t/T)**5+10*(t/T)**3);
+    taudot = 2*pi*(-15*4*(1/T)*(t/T)**3+6*5*(1/T)*(t/T)**4+10*3*(1/T)*(t/T)**2);
+    tauddot = 2*pi*(-15*4*3*(1/T)**2*(t/T)**2 + 6*5*4*(1/T)**2*(t/T)**3+10*3*2*(1/T)**2*(t/T));
+
+    x = x0+A*sin(a*tau);
+    y = y0+B*cos(b*tau);
+    xdot =  A*a*cos(a*tau)*taudot;
+    ydot = -B*b*sin(b*tau)*taudot;
+    xddot = -A*a*a*sin(a*tau)*taudot+A*a*cos(a*tau)*tauddot;
+    yddot = -B*b*b*sin(b*tau)*taudot-B*b*sin(b*tau)*tauddot;
+
+    if (0): #code to check the curve
+        plt.figure(1)
+        plt.plot(x,y)
+        plt.ylabel("y")
+        plt.xlabel("x");
+        plt.title("Plot of trajectory")
+        plt.show(block=False)
+        plt.pause(2)
+        plt.close()
+    return t, x,y,xdot,ydot,xddot,yddot
+
+
 parms = parameters()
 h = 0.005
 t0 = 0
@@ -197,7 +229,13 @@ N = int((tN-t0)/h) + 1
 t = np.linspace(t0, tN, N)
 T = t[N-1]
 
-x0 = 5; z0 = 5
+x0_l = 0;
+y0_l = 0;
+
+t, x_ref,z_ref,v_x_ref,v_z_ref, \
+a_x_ref,a_z_ref  = figure8(x0_l,y0_l,h,t0,tN)
+
+x0 = x_ref[0]; z0 = z_ref[0]
 vx0 = 0; vz0 = 0
 theta0 = np.deg2rad(0)
 thetadot0 = 0
@@ -227,12 +265,12 @@ Iyy = parms.Iyy
 Izz = parms.Izz
 # X_pos = [np.array([X0[0], X0[1], X0[2]])]
 # X_ang = [np.array([X0[6], X0[7], X0[8]])]
-x_ref = np.zeros(N)
-v_x_ref = np.zeros(N)
-a_x_ref = np.zeros(N)
-z_ref = np.zeros(N)
-v_z_ref = np.zeros(N)
-a_z_ref = np.zeros(N)
+# x_ref = np.zeros(N)
+# v_x_ref = np.zeros(N)
+# a_x_ref = np.zeros(N)
+# z_ref = np.zeros(N)
+# v_z_ref = np.zeros(N)
+# a_z_ref = np.zeros(N)
 phi_ldes = np.zeros(N)
 theta_des = np.zeros(N)
 thetadot_des = np.zeros(N)
