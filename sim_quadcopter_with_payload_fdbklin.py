@@ -19,12 +19,12 @@ class parameters:
         self.Izz = 8.801*1e-3
         self.g = 9.81
         self.l = 0.225
-        self.cable_l = 0.2
+        self.cable_l = 0.3
         self.K = 2.980*1e-6
         self.b = 1.14*1e-7
-        self.Ax = 0
-        self.Ay = 0
-        self.Az = 0
+        self.Ax = 0.25
+        self.Ay = 0.25
+        self.Az = 0.25
         self.pause = 0.01
         self.fps = 10
         self.K_z = np.array([1, 2])
@@ -449,7 +449,7 @@ def EOM_matrices(X,m_q,m_l,Ixx,Iyy,Izz,g,l,cable_l,K,b,Ax,Ay,Az,u1,u2,u3,u4):
 parms = parameters()
 h = 0.01
 t0 = 0
-tN = 60
+tN = 240
 N = int((tN-t0)/h) + 1
 t = np.linspace(t0, tN, N)
 T = t[N-1]
@@ -476,15 +476,15 @@ tautdot = 2*mpi*(-15*4*3*2*(1/T)**3*(t/T) + 6*5*4*3*(1/T)**3*(t/T)**2 + 10*3*2*(
 x_ref = B*np.cos(b*tau)
 y_ref = A_const*np.sin(a*tau)
 z_ref = np.zeros(N)
-v_x = np.zeros(N)
-v_y = np.zeros(N)
-a_x = np.zeros(N)
-a_y = np.zeros(N)
-# v_y = A_const*a*np.cos(a*tau)*taudot
-# v_x = -B*b*np.sin(b*tau)*taudot
+# v_x = np.zeros(N)
+# v_y = np.zeros(N)
+# a_x = np.zeros(N)
+# a_y = np.zeros(N)
+v_y = A_const*a*np.cos(a*tau)*taudot
+v_x = -B*b*np.sin(b*tau)*taudot
 v_z = np.zeros(N)
-# a_y = -A_const*a*a*np.sin(a*tau)*taudot+A_const*a*np.cos(a*tau)*tauddot
-# a_x = -B*b*b*np.sin(b*tau)*taudot-B*b*np.sin(b*tau)*tauddot
+a_y = -A_const*a*a*np.sin(a*tau)*taudot+A_const*a*np.cos(a*tau)*tauddot
+a_x = -B*b*b*np.sin(b*tau)*taudot-B*b*np.sin(b*tau)*tauddot
 a_z = np.zeros(N)
 # j_y = -A_const*a*a*a*np.cos(a*tau)*taudot-A_const*a*a*np.sin(a*tau)*tauddot - A_const*a*a*np.sin(a*tau)*tauddot + A_const*a*np.cos(a*tau)*tautdot
 # j_x = -B*b*b*b*np.cos(b*tau)*taudot-B*b*b*np.sin(b*tau)*tauddot - B*b*b*np.cos(b*tau)*tauddot-B*b*np.sin(b*tau)*tautdot
@@ -501,9 +501,9 @@ a_z = np.zeros(N)
 # vz0 = 0
 # theta0, psi0, phi0, thetadot0, psidot0, phidot0 = [0, 0, 0, 0, 0, 0]
 
-x0 = 0; y0 = 0; z0 = 1
+x0 = x_ref[0]; y0 = y_ref[0]; z0 = z_ref[0]
 vx0 = 0; vy0 = 0; vz0 = 0
-phi0 = np.deg2rad(10); theta0 = np.deg2rad(10); psi0 = np.deg2rad(10)
+phi0 = np.deg2rad(0); theta0 = np.deg2rad(0); psi0 = np.deg2rad(0)
 phidot0 = 0; thetadot0 = 0; psidot0 = 0
 theta_l0 = 0; phi_l0 = 0
 thetadot_l0 = 0; phidot_l0 = 0
@@ -705,10 +705,18 @@ plt.plot(t, PHI_L)
 plt.legend(['Theta_l', 'Phi_l'])
 plt.ylabel('Load swing angles')
 plt.xlabel('time')
-#plt.show()
+
+fig6 = plt.figure(6)
+ax2 = plt.subplot(111)
+plt.plot(X_POS[:,0], X_POS[:,1], color='black', marker='o', markersize=2)
+plt.plot(x_ref, y_ref, color='blue', linestyle='-')
+ax2.set_aspect('equal')
+
 plt.show(block=False)
-plt.pause(60)
-plt.close()
+# plt.pause(60)
+# plt.close()
+plt.show()
+
 #
-fig = plt.figure(6)
+fig7 = plt.figure(7)
 animate(t,X_POS,X_ANG,THETA_L,PHI_L,parms)

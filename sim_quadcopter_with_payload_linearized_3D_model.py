@@ -331,8 +331,8 @@ def controller(X, omega):
     # print(controllability_test)
     # ctrb_rank = np.linalg.matrix_rank(controllability_test)
     # print(ctrb_rank)
-    Q = np.eye(16)
-    R = 1e-5*np.eye(4) # np.zeros((4, 4))
+    Q = np.diag(np.ones(16)*1/16)
+    R = 1e-3*np.diag(np.ones(4)*1/1000**2) # np.zeros((4, 4))
     K, P, E = ctrl.lqr(A_np, B_np, Q, R)
     U = -K.dot(X[1])
     omega1 = omega[0]**2 + U[0]
@@ -354,7 +354,7 @@ T = t[N-1]
 
 x0 = 0; y0 = 0; z0 = 1
 vx0 = 0; vy0 = 0; vz0 = 0
-phi0 = np.deg2rad(0); theta0 = np.deg2rad(0); psi0 = np.deg2rad(0)
+phi0 = np.deg2rad(10); theta0 = np.deg2rad(10); psi0 = np.deg2rad(10)
 phidot0 = 0; thetadot0 = 0; psidot0 = 0
 theta_l0 = 0; phi_l0 = 0
 thetadot_l0 = 0; phidot_l0 = 0
