@@ -12,19 +12,19 @@ warnings.filterwarnings("ignore")
 
 class parameters:
     def __init__(self):
-        self.m_q = 0.468  # 0.08 = 80gms - Tello specs
-        self.m_l = 0.01   # 0.03 - Load mass attached to Tello
+        self.m_q = 0.08  # 0.08 = 80gms - Tello specs
+        self.m_l = 0.03   # 0.03 - Load mass attached to Tello
         self.Ixx = 4.856*1e-3
         self.Iyy = 4.856*1e-3
         self.Izz = 8.801*1e-3
         self.g = 9.81
-        self.l = 0.225  # 0.1 - Tello specs
+        self.l = 0.1  # 0.1 - Tello specs
         self.cable_l = 0.3
         self.K = 2.980*1e-6
         self.b = 1.14*1e-7
         self.Ax = 0.25
         self.Ay = 0.25
-        self.Az = 0.25  # 0 - Value for Tello
+        self.Az = 0  # 0 - Value for Tello
         self.pause = 0.0001
         self.fps = 0.5
         self.K_z = np.array([1, 2])
