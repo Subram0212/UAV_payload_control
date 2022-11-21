@@ -117,7 +117,7 @@ class Controller_fdbklin:
 
         T_psi = (self.K_psid*(-psidot) + self.K_psi*(psi_des-psi))*self.Izz
 
-        return T_phi, T_theta, T_psi
+        return T_phi, T_theta
 
 
 

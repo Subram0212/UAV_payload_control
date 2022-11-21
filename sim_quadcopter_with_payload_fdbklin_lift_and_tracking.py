@@ -12,19 +12,19 @@ warnings.filterwarnings("ignore")
 
 class parameters:
     def __init__(self):
-        self.m_q = 0.08
-        self.m_l = 0.01
+        self.m_q = 0.468  # 0.08 = 80gms - Tello specs
+        self.m_l = 0.01   # 0.03 - Load mass attached to Tello
         self.Ixx = 4.856*1e-3
         self.Iyy = 4.856*1e-3
         self.Izz = 8.801*1e-3
         self.g = 9.81
-        self.l = 0.225
+        self.l = 0.225  # 0.1 - Tello specs
         self.cable_l = 0.3
         self.K = 2.980*1e-6
         self.b = 1.14*1e-7
         self.Ax = 0.25
         self.Ay = 0.25
-        self.Az = 0.25
+        self.Az = 0.25  # 0 - Value for Tello
         self.pause = 0.0001
         self.fps = 0.5
         self.K_z = np.array([1, 2])
@@ -695,10 +695,10 @@ for i in range(0, N-1):
     parms.u1, parms.u2, parms.u3, parms.u4 = u_vals
     ang = np.array([phi, phidot, theta, thetadot, psi, psidot], dtype='float64')
     THETA_DES_STATE = np.array([phi_des, theta_des, psi_des[i]], dtype='float64')
-    T_phi, T_theta, T_psi = control_vars.control_action(ang, THETA_DES_STATE)
+    T_phi, T_theta = control_vars.control_action(ang, THETA_DES_STATE)
     parms.u2 = T_phi
     parms.u3 = T_theta
-    parms.u4 = T_psi
+    # parms.u4 = T_psi
     u_vals = u_vals.reshape(4,)
     X0 = X[1]
     X_VAL.append(X[1][j]); j+=1;
