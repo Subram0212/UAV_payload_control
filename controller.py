@@ -42,7 +42,7 @@ class Controller:
         v_xd, v_yd, v_zd = des_traj_vals[3:6]
         a_xd, a_yd, a_zd = des_traj_vals[6:9]
         # j_xd, j_yd, j_zd = des_traj_vals[9:12]
-        phi, phidot, phiddot, phitdot = des_traj_vals[12:16]
+        phi, phidot, phiddot = des_traj_vals[12:16]
 
         x, y, z = act_traj_vals[0:3]
         # x += 0.001*np.random.random(size=1)[0]
@@ -151,9 +151,9 @@ class Controller:
         # "Getting torque for given angle and torques"
 
         # calculating the elevation torque.
-        accel = self.g + self.K_z[1]*(desired_state[1] - vertical[1]) + self.K_z[0] * (desired_state[0] - vertical[0])
-        T = accel * (self.m_q + self.m_l) / (np.cos(ang[0, 0]) * np.cos(ang[1, 0]))
-        # T = desired_state[6]
+        # accel = self.g + self.K_z[1]*(desired_state[1] - vertical[1]) + self.K_z[0] * (desired_state[0] - vertical[0])
+        # T = accel * (self.m_q + self.m_l) / (np.cos(ang[0, 0]) * np.cos(ang[1, 0]))
+        T = desired_state[6]
 
         T_theta = ((self.K_theta[1] * (-ang[0,1]) + self.K_theta[0] * (desired_state[2] - ang[0,0])) * self.I[0])
         T_psi = (self.K_psi[1] * (-ang[1,1]) + self.K_psi[0] * (desired_state[3] - ang[1,0])) * self.I[1]
@@ -170,7 +170,7 @@ class Controller:
         #
         # print("************************************************")
 
-        return np.array([T, T_theta, T_psi, T_phi], dtype='float64'), desired_state[2], desired_state[3]
+        return np.array([T, T_theta, T_psi, T_phi], dtype='float64')
 
     def get_action(self, desired_action, ang, translation) -> np.ndarray:
         """Get the control action given desired and ang, translation

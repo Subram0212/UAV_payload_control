@@ -5,38 +5,34 @@ from scipy import interpolate
 from scipy.integrate import odeint
 #from mpl_toolkits.mplot3d import art3d
 import mpl_toolkits.mplot3d.axes3d as p3
-from control_fdbklin_3D import Controller_fdbklin
-from ipywidgets import interact
-from IPython.display import display
-import warnings
-warnings.filterwarnings("ignore")
+from controller import Controller
 
 
 class parameters:
     def __init__(self):
-        self.m_q = 0.08  # 0.08 = 80gms - Tello specs
-        self.m_l = 0.03   # 0.03 - Load mass attached to Tello
+        self.m_q = 0.468
+        self.m_l = 0.1
         self.Ixx = 4.856*1e-3
         self.Iyy = 4.856*1e-3
         self.Izz = 8.801*1e-3
         self.g = 9.81
-        self.l = 0.127  # 0.127 - Tello specs
-        self.cable_l = 0.3
+        self.l = 0.225
+        self.cable_l = 0.2
         self.K = 2.980*1e-6
         self.b = 1.14*1e-7
-        self.Ax = 0.25
-        self.Ay = 0.25
-        self.Az = 0  # 0 - Value for Tello
-        self.pause = 0.0001
-        self.fps = 0.5
+        self.Ax = 0.25*0
+        self.Ay = 0.25*0
+        self.Az = 0.25*0
+        self.pause = 0.01
+        self.fps = 5
         self.K_z = np.array([1, 2])
-        self.K_phi = np.array([2, 0.75])
-        self.K_theta = np.array([2, 0.75])
-        self.K_psi = np.array([2, 0.75])
-        self.Kp = np.array([2, 2, 10, 2], dtype='float64')
-        self.Kd = np.array([0.75*2, 0.75*2, 0.75*5, 0.75], dtype='float64')
-        self.Kdd = np.array([1.00, 1.00, 1.00*3, 1.00])
-        self.Ki = np.array([1.5*3, 1.5*3, 1.5*3, 1.5])
+        self.K_phi = np.array([4, 4])
+        self.K_theta = np.array([4, 4])
+        self.K_psi = np.array([-4, -4])
+        self.Kp = np.array([10, 10, 10])
+        self.Kd = np.array([7, 7, 7])
+        self.Kdd = np.array([1.00, 1.00, 1.00])
+        self.Ki = np.array([1.5, 1.5, 1.5])
 
         omega = 1
         speed = omega*np.sqrt(1/self.K)
@@ -179,10 +175,6 @@ def animate(t,Xpos,Xang,Theta_l, Phi_l, parms) -> None:
         ax.set_ylim(-1, 1)
         ax.set_zlim(-1, 2.5)
         ax.view_init(azim=-72, elev=20)
-        @interact(dist=(1, 20, 1))
-        def update(dist=5):
-            ax.dist = dist
-            display(fig)
 
         plt.pause(parms.pause)
 
@@ -455,8 +447,8 @@ def EOM_matrices(X,m_q,m_l,Ixx,Iyy,Izz,g,l,cable_l,K,b,Ax,Ay,Az,u1,u2,u3,u4):
 parms = parameters()
 h = 0.005
 t0 = 0
-t1 = 25
-tN = 100
+t1 = 10
+tN = 15
 # N = int((tN-t0)/h) + 1
 # t = np.linspace(t0, tN, N)
 N1 = int((t1-t0)/h)
@@ -671,42 +663,28 @@ X_ANG[0, 3] = X0[13]
 X_ANG[0, 4] = X0[14]
 X_ANG[0, 5] = X0[15]
 
-
 for i in range(0, N-1):
     j = 0
-    control_vars = Controller_fdbklin(Kp, Kd, Kdd, Ki, K_phi, K_theta, K_psi, Ixx, Iyy, Izz)
+    desired_traj_values = np.array([x_ref[i], y_ref[i], z_ref[i], v_x[i], v_y[i], v_z[i], a_x[i], a_y[i], a_z[i], j_x[i], j_y[i], j_z[i], psi_des[i], psi_desdot[i], psi_desddot[i]])
     t_temp = np.array([t[i], t[i+1]], dtype='float64')
-    # desired_state = control.get_desired_positions(t_temp, desired_traj_values)
-    # desired_state = np.array([z_ref[i], v_z[i], theta[i], thetadot[i], psi[i], psidot[i], phi[i], phidot[i]])
     all_parms = (parms.m_q,parms.m_l,parms.Ixx,parms.Iyy,parms.Izz,parms.g,parms.l,parms.cable_l,
                  parms.K,parms.b,parms.Ax,parms.Ay,parms.Az,
                  parms.u1,parms.u2,parms.u3,parms.u4)
-    invA, B, D, xddot = EOM_matrices(X0, parms.m_q,parms.m_l,parms.Ixx,parms.Iyy,parms.Izz,parms.g,parms.l,parms.cable_l,
-                                     parms.K,parms.b,parms.Ax,parms.Ay,parms.Az,
-                                     parms.u1,parms.u2,parms.u3,parms.u4)
+    acc = eom(X0, t_temp, parms.m_q,parms.m_l,parms.Ixx,parms.Iyy,parms.Izz,parms.g,parms.l,parms.cable_l,
+              parms.K,parms.b,parms.Ax,parms.Ay,parms.Az,
+              parms.u1,parms.u2,parms.u3,parms.u4)
+    actual_traj_values = np.array([X0[0], X0[1], X0[2], X0[8], X0[9], X0[10], acc[8], acc[9], acc[10]])
+    control = Controller(K_z, K_psi, K_theta, K_phi, Kp, Kd, Kdd, Ki, A, k, l, b_drag_const)
+    # desired_state, thetadot, psidot = control.get_desired_positions(t_temp, desired_traj_values, actual_traj_values)
+    desired_state = control.get_desired_positions(t_temp, desired_traj_values, actual_traj_values)
     X = odeint(eom, X0, t_temp, args=all_parms)
-    phi = X[1][5]
-    phidot = X[1][13]
-    theta = X[1][6]
-    thetadot = X[1][14]
-    psi = X[1][7]
-    psidot = X[1][15]
-    # ang = np.array([[X[1][3], X[1][9]], [X[1][4], X[1][10]], [X[1][5], X[1][11]]], dtype='float64')
-    # translation = np.array([[X[1][0], X[1][6]], [X[1][1], X[1][7]], [X[1][2], X[1][8]]], dtype='float64')
-    # vertical = translation[2]
-    # torques, theta_temp, psi_temp = control._get_torques(vertical, ang, desired_state)
+    ang = np.array([[X[1][5], X[1][13]], [X[1][6], X[1][14]], [X[1][7], X[1][15]]], dtype='float64')
+    translation = np.array([[X[1][0], X[1][8]], [X[1][1], X[1][9]], [X[1][2], X[1][10]]], dtype='float64')
+    vertical = translation[2]
+    torques = control._get_torques(vertical, ang, desired_state)
     # omega = control.get_action(desired_state, ang, translation)
-    u_vals, phi_des, theta_des = control_vars.get_desired_positions(t_temp, invA, B, D, X[1], xddot, x_ref[i], y_ref[i], z_ref[i], psi_des[i], v_x[i], v_y[i], v_z[i], psi_desdot[i], a_x[i], a_y[i], a_z[i], psi_desddot[i], parms.m_q,parms.m_l,parms.Ixx,parms.Iyy,parms.Izz,parms.g,parms.l,parms.cable_l,
-                                                                    parms.K,parms.b,parms.Ax,parms.Ay,parms.Az,
-                                                                    parms.u1,parms.u2,parms.u3,parms.u4)
-    parms.u1, parms.u2, parms.u3, parms.u4 = u_vals
-    ang = np.array([phi, phidot, theta, thetadot, psi, psidot], dtype='float64')
-    THETA_DES_STATE = np.array([phi_des, theta_des, psi_des[i]], dtype='float64')
-    T_phi, T_theta = control_vars.control_action(ang, THETA_DES_STATE)
-    parms.u2 = T_phi
-    parms.u3 = T_theta
-    # parms.u4 = T_psi
-    u_vals = u_vals.reshape(4,)
+    # omega_temp = omega.reshape(4,)
+    parms.u1, parms.u2, parms.u3, parms.u4 = torques
     X0 = X[1]
     X_VAL.append(X[1][j]); j+=1;
     Y.append(X[1][j]); j+=1;
@@ -724,9 +702,6 @@ for i in range(0, N-1):
     PHIDOT.append(X[1][j]); j+=1;
     THETADOT.append(X[1][j]); j+=1;
     PSIDOT.append(X[1][j]); j+=1;
-    DES_PHI.append(phi_des)
-    DES_THETA.append(theta_des)
-    DES_PSI.append(psi_des[i])
     X_POS[i+1, 0] = X[1][0]
     X_POS[i+1, 1] = X[1][1]
     X_POS[i+1, 2] = X[1][2]
@@ -742,36 +717,36 @@ for i in range(0, N-1):
     X_ANG[i+1, 5] = X[1][15]
     # X_pos.append(np.array([X_VAL[i], Y[i], Z[i]]))
     # X_ang.append(np.array([PHI[i], THETA[i], PSI[i]]))
-    OMEGA[i+1] = u_vals
+    OMEGA[i+1] = torques
 
 plt.figure(1)
-plt.subplot(2,1,1)
+plt.subplot(3,1,1)
 plt.plot(t,X_VAL);
 plt.plot(t,Y)
 plt.plot(t,Z)
 plt.ylabel('linear position');
 plt.legend(['x_pos', 'y_pos', 'z_pos'])
-plt.subplot(2,1,2)
+plt.subplot(3,1,2)
+plt.plot(t,VX);
+plt.plot(t,VY)
+plt.plot(t,VZ)
+plt.xlabel('time')
+plt.ylabel('linear velocity');
+plt.legend(['x_vel', 'y_vel', 'z_vel'])
+plt.subplot(3,1,3)
 plt.plot(t,PHI);
 plt.plot(t,THETA)
 plt.plot(t,PSI)
 plt.xlabel('time')
 plt.ylabel('angular position');
 plt.legend(['Angle phi', 'Angle theta', 'Angle psi'])
-# plt.subplot(3,1,3)
-# plt.plot(t,PHI);
-# plt.plot(t,THETA)
-# plt.plot(t,PSI)
-# plt.xlabel('time')
-# plt.ylabel('angular position');
-# plt.legend(['Angle phi', 'Angle theta', 'Angle psi'])
 
-plt.figure(2)
-plt.subplot(1,1,1)
-plt.plot(t,DES_PHI);
-plt.plot(t,DES_THETA)
-plt.plot(t,DES_PSI)
-plt.ylabel('angular positions - desired values');
+# plt.figure(2)
+# plt.subplot(2,1,1)
+# plt.plot(t,phi);
+# plt.plot(t,theta)
+# plt.plot(t,psi)
+# plt.ylabel('angular position');
 # plt.subplot(2,1,2)
 # plt.plot(t,phidot);
 # plt.plot(t,thetadot)
@@ -784,35 +759,23 @@ plt.ylabel('angular positions - desired values');
 ax=plt.figure(4)
 plt.subplot(1,1,1)
 plt.plot(t,OMEGA);
-plt.ylabel('U_values');
+# plt.plot(t,omega_y);
+# plt.plot(t,omega_z);
+ax.legend(['u1', 'u2','u3', 'u4'])
+plt.ylabel('torques');
 # plt.subplot(2,1,2)
 # plt.plot(t,omega_body_x);
 # plt.plot(t,omega_body_y);
 # plt.plot(t,omega_body_z);
-ax.legend(['U1', 'U2','U3', 'U4'])
+# ax.legend(['x', 'y','z'])
 # plt.ylabel('omega body');
 plt.xlabel('time')
-#
-#
-fig = plt.figure(5)
-plt.subplot(1, 1, 1)
-plt.plot(t, THETA_L)
-plt.plot(t, PHI_L)
-plt.legend(['Theta_l', 'Phi_l'])
-plt.ylabel('Load swing angles')
-plt.xlabel('time')
 
-fig6 = plt.figure(6)
-ax2 = plt.subplot(111)
-plt.plot(X_POS[:,0], X_POS[:,1], color='black', marker='o', markersize=2)
-plt.plot(x_ref, y_ref, color='blue', linestyle='-')
-ax2.set_aspect('equal')
 
+# plt.show()
 plt.show(block=False)
 plt.pause(60)
 plt.close()
-# plt.show()
-
 #
-fig7 = plt.figure(7)
-animate(t,X_POS,X_ANG,THETA_L,PHI_L,parms)
+fig = plt.figure(5)
+fig7 = animate(t,X_POS,X_ANG,parms)

@@ -25,9 +25,11 @@ class Controller_fdbklin:
 
     def equations(self, variables, v_x, v_y, v_z, m_q,m_l,Ixx,Iyy,Izz,g,l,cable_l,K,b,Ax,Ay,Az,u2,u3,u4,vx, vy, vz,theta_l,phi_l,theta_ldot, phi_ldot, psi):
         """
-        Solves a system of nonlinear equations
-        :param parms: vx, vy, vz
-        :return: phi_d, theta_d, u1
+        Solves a system of nonlinear equations to get desired roll and pitch angles. The desired roll and pitch
+        angles mean that the drone flight should be maintained such a way that those angles (roll, pitch and yaw) should
+        be as small as possible, and have a constant thrust throughout its flight to maintain stability.
+        :param vx, vy
+        :return: phi_d, theta_d
         """
         phi, theta = variables
         sin = np.sin
@@ -41,7 +43,7 @@ class Controller_fdbklin:
         :param invA: inverse matrix of the Mass inertia matrix A
         :param B_control: B matrix of the EOM: AXDDOT + D = B*u
         :param D_sym: D matrix of the EOM: AXDDOT + D = B*u
-        :return: u values (the nonlinear control inputs)
+        :return: u values (the nonlinear control inputs) -> specifically its 'u1' and 'u4' are being applied to the dynamics.
         """
         t = t_step[1] - t_step[0]
         sin = np.sin
@@ -85,7 +87,7 @@ class Controller_fdbklin:
         print("Yaw torque is: {}".format(U[3]))
         print("*************************************************************************\n")
         parms = v_x, v_y, v_z, m_q,m_l,Ixx,Iyy,Izz,g,l,cable_l,K,b,Ax,Ay,Az,u2,u3,u4,vx, vy, vz,theta_l,phi_l,theta_ldot, phi_ldot, psi
-        variables = phi, theta
+        variables = 0, 0
         phi_d, theta_d = fsolve(self.equations, (variables), args=parms)
 
         return U, phi_d, theta_d

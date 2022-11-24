@@ -290,8 +290,8 @@ def eom(X,t,m_q,m_l,Ixx,Iyy,Izz,g,l,cable_l,K,b,Ax,Ay,Az,omega1,omega2,omega3,om
 parms = parameters()
 h = 0.05
 t0 = 0
-t1 = 20
-tN = 50
+t1 = 75
+tN = 300
 # N = int((tN-t0)/h) + 1
 # t = np.linspace(t0, tN, N)
 N1 = int((t1-t0)/h)
