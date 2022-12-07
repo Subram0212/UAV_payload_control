@@ -14,13 +14,13 @@ warnings.filterwarnings("ignore")
 
 class parameters:
     def __init__(self):
-        self.m_q = 0.08  # 0.08 = 80gms - Tello specs
+        self.m_q = 0.468  # 0.08 = 80gms - Tello specs
         self.m_l = 0.03   # 0.03 - Load mass attached to Tello
         self.Ixx = 4.856*1e-3
         self.Iyy = 4.856*1e-3
         self.Izz = 8.801*1e-3
         self.g = 9.81
-        self.l = 0.127  # 0.127 - Tello specs
+        self.l = 0.225  # 0.127 - Tello specs
         self.cable_l = 0.3
         self.K = 2.980*1e-6
         self.b = 1.14*1e-7
@@ -168,8 +168,8 @@ def animate(t,Xpos,Xang,Theta_l, Phi_l, parms) -> None:
         new_load_pos[1] = y + cable_l*sin(theta_l)
         new_load_pos[2] = z - cable_l*cos(theta_l)*cos(phi_l)
 
-        ax = p3.Axes3D(fig7, auto_add_to_figure=False)
-        fig7.add_axes(ax)
+        ax = p3.Axes3D(fig8, auto_add_to_figure=False)
+        fig8.add_axes(ax)
         axle1, = ax.plot(new_axle_x[:, 0],new_axle_x[:, 1],new_axle_x[:, 2], 'ro-', linewidth=3)
         axle2, = ax.plot(new_axle_y[:, 0], new_axle_y[:, 1], new_axle_y[:, 2], 'bo-', linewidth=3)
         track, = plt.plot(x, y, z, color='black',marker='o',markersize=2)
@@ -671,6 +671,9 @@ X_ANG[0, 3] = X0[13]
 X_ANG[0, 4] = X0[14]
 X_ANG[0, 5] = X0[15]
 
+error_x = [0]
+error_y = [0]
+
 
 for i in range(0, N-1):
     j = 0
@@ -743,6 +746,8 @@ for i in range(0, N-1):
     # X_pos.append(np.array([X_VAL[i], Y[i], Z[i]]))
     # X_ang.append(np.array([PHI[i], THETA[i], PSI[i]]))
     OMEGA[i+1] = u_vals
+    error_x.append(x_ref[i] - X[1][0])
+    error_y.append(y_ref[i] - X[1][1])
 
 plt.figure(1)
 plt.subplot(2,1,1)
@@ -789,7 +794,7 @@ plt.ylabel('U_values');
 # plt.plot(t,omega_body_x);
 # plt.plot(t,omega_body_y);
 # plt.plot(t,omega_body_z);
-ax.legend(['U1', 'U2','U3', 'U4'])
+ax.legend(['U1 (Thrust)', 'U2 (Roll Torque)','U3 (Pitch Torque)', 'U4 (Yaw Torque)'])
 # plt.ylabel('omega body');
 plt.xlabel('time')
 #
@@ -806,13 +811,34 @@ fig6 = plt.figure(6)
 ax2 = plt.subplot(111)
 plt.plot(X_POS[:,0], X_POS[:,1], color='black', marker='o', markersize=2)
 plt.plot(x_ref, y_ref, color='blue', linestyle='-')
+plt.legend(['Actual traj.', 'Desired traj.'])
+plt.xlabel('X')
+plt.ylabel('Y')
 ax2.set_aspect('equal')
+plt.savefig('Tracking.png')
 
 plt.show(block=False)
 plt.pause(60)
 plt.close()
 # plt.show()
 
-#
-fig7 = plt.figure(7)
+fig7 = plt.figure()
+ax7 = plt.subplot(211)
+plt.plot(t, np.zeros(len(t)), color='black', linestyle='--')
+plt.plot(t, error_x, color='blue')
+plt.ylabel('x_error')
+plt.subplot(212)
+plt.plot(t, np.zeros(len(t)), color='black', linestyle='--')
+plt.plot(t, error_y, color='blue')
+plt.ylabel('y_error')
+plt.xlabel('time')
+plt.savefig('Error.png')
+plt.show(block=False)
+plt.pause(60)
+plt.close()
+
+fig8 = plt.figure(8)
 animate(t,X_POS,X_ANG,THETA_L,PHI_L,parms)
+
+
+#

@@ -21,6 +21,7 @@ class Controller_fdbklin:
         self.integral_error_x = 0
         self.integral_error_y = 0
         self.integral_error_z = 0
+        self.integral_error_psi = 0
         self.Kxi, self.Kyi, self.Kzi, self.Kpsii = Ki
 
     def equations(self, variables, v_x, v_y, v_z, m_q,m_l,Ixx,Iyy,Izz,g,l,cable_l,K,b,Ax,Ay,Az,u2,u3,u4,vx, vy, vz,theta_l,phi_l,theta_ldot, phi_ldot, psi):
@@ -53,6 +54,7 @@ class Controller_fdbklin:
         ex = (xd - x)
         ey = (yd - y)
         ez = (zd - z)
+        epsi = (psid - psi)
         exd = (vxd - vx)
         eyd = (vyd - vy)
         ezd = (vzd - vz)
@@ -62,14 +64,15 @@ class Controller_fdbklin:
         self.integral_error_x += ex * t
         self.integral_error_y += ey * t
         self.integral_error_z += ez * t
+        self.integral_error_psi += epsi * t
         v_x = self.kddx*(axd - ax) + self.Kxi*self.integral_error_x + self.kdx*(vxd - vx) + self.kpx*(xd - x)
-        v_y = self.kddx*(ayd - ay) + self.Kyi*self.integral_error_x + self.kdy*(vyd - vy) + self.kpy*(yd - y)
-        v_z = self.kddx*(azd - az) + self.Kzi*self.integral_error_x + self.kdz*(vzd - vz) + self.kpz*(zd - z)
+        v_y = self.kddx*(ayd - ay) + self.Kyi*self.integral_error_y + self.kdy*(vyd - vy) + self.kpy*(yd - y)
+        v_z = self.kddx*(azd - az) + self.Kzi*self.integral_error_z + self.kdz*(vzd - vz) + self.kpz*(zd - z)
         v_thetal = 0
         v_phil = 0
         v_phi = 0
         v_theta = 0
-        v_psi = self.kddpsi*(psidesddot - psiddot) + self.Kpsii*self.integral_error_x + self.kdpsi*(psidesdot - psidot) + self.kppsi*(psid - psi)
+        v_psi = self.kddpsi*(psidesddot - psiddot) + self.Kpsii*self.integral_error_psi + self.kdpsi*(psidesdot - psidot) + self.kppsi*(psid - psi)
 
         V = np.array([v_x, v_y, v_z, v_thetal, v_phil, v_phi, v_theta, v_psi])
         V = V.reshape(len(V),1)
