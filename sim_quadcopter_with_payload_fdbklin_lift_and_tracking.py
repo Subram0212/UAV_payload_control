@@ -6,7 +6,7 @@ from scipy.integrate import odeint
 #from mpl_toolkits.mplot3d import art3d
 import mpl_toolkits.mplot3d.axes3d as p3
 from control_fdbklin_3D import Controller_fdbklin
-from ipywidgets import interact
+# from ipywidgets import interact
 from IPython.display import display
 import warnings
 warnings.filterwarnings("ignore")
@@ -179,10 +179,10 @@ def animate(t,Xpos,Xang,Theta_l, Phi_l, parms) -> None:
         ax.set_ylim(-1, 1)
         ax.set_zlim(-1, 2.5)
         ax.view_init(azim=-72, elev=20)
-        @interact(dist=(1, 20, 1))
-        def update(dist=5):
-            ax.dist = dist
-            display(fig)
+        # @interact(dist=(1, 20, 1))
+        # def update(dist=5):
+        #     ax.dist = dist
+        #     display(fig)
 
         plt.pause(parms.pause)
 
