@@ -602,7 +602,7 @@ x0 = x_ref[0]; y0 = y_ref[0]; z0 = z_ref[0]
 vx0 = 0; vy0 = 0; vz0 = 0
 phi0 = np.deg2rad(0); theta0 = np.deg2rad(0); psi0 = np.deg2rad(0)
 phidot0 = 0; thetadot0 = 0; psidot0 = 0
-theta_l0 = 0; phi_l0 = 0
+theta_l0 = np.deg2rad(10); phi_l0 = 0
 thetadot_l0 = 0; phidot_l0 = 0
 
 # t = np.linspace(0, 1, 101)
