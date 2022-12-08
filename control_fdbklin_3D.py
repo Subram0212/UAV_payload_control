@@ -21,13 +21,16 @@ class Controller_fdbklin:
         self.integral_error_x = 0
         self.integral_error_y = 0
         self.integral_error_z = 0
+        self.integral_error_psi = 0
         self.Kxi, self.Kyi, self.Kzi, self.Kpsii = Ki
 
     def equations(self, variables, v_x, v_y, v_z, m_q,m_l,Ixx,Iyy,Izz,g,l,cable_l,K,b,Ax,Ay,Az,u2,u3,u4,vx, vy, vz,theta_l,phi_l,theta_ldot, phi_ldot, psi):
         """
-        Solves a system of nonlinear equations
-        :param parms: vx, vy, vz
-        :return: phi_d, theta_d, u1
+        Solves a system of nonlinear equations to get desired roll and pitch angles. The desired roll and pitch
+        angles mean that the drone flight should be maintained such a way that those angles (roll, pitch and yaw) should
+        be as small as possible, and have a constant thrust throughout its flight to maintain stability.
+        :param vx, vy
+        :return: phi_d, theta_d
         """
         phi, theta = variables
         sin = np.sin
@@ -41,7 +44,7 @@ class Controller_fdbklin:
         :param invA: inverse matrix of the Mass inertia matrix A
         :param B_control: B matrix of the EOM: AXDDOT + D = B*u
         :param D_sym: D matrix of the EOM: AXDDOT + D = B*u
-        :return: u values (the nonlinear control inputs)
+        :return: u values (the nonlinear control inputs) -> specifically its 'u1' and 'u4' are being applied to the dynamics.
         """
         t = t_step[1] - t_step[0]
         sin = np.sin
@@ -51,6 +54,7 @@ class Controller_fdbklin:
         ex = (xd - x)
         ey = (yd - y)
         ez = (zd - z)
+        epsi = (psid - psi)
         exd = (vxd - vx)
         eyd = (vyd - vy)
         ezd = (vzd - vz)
@@ -60,14 +64,15 @@ class Controller_fdbklin:
         self.integral_error_x += ex * t
         self.integral_error_y += ey * t
         self.integral_error_z += ez * t
+        self.integral_error_psi += epsi * t
         v_x = self.kddx*(axd - ax) + self.Kxi*self.integral_error_x + self.kdx*(vxd - vx) + self.kpx*(xd - x)
-        v_y = self.kddx*(ayd - ay) + self.Kyi*self.integral_error_x + self.kdy*(vyd - vy) + self.kpy*(yd - y)
-        v_z = self.kddx*(azd - az) + self.Kzi*self.integral_error_x + self.kdz*(vzd - vz) + self.kpz*(zd - z)
+        v_y = self.kddx*(ayd - ay) + self.Kyi*self.integral_error_y + self.kdy*(vyd - vy) + self.kpy*(yd - y)
+        v_z = self.kddx*(azd - az) + self.Kzi*self.integral_error_z + self.kdz*(vzd - vz) + self.kpz*(zd - z)
         v_thetal = 0
         v_phil = 0
         v_phi = 0
         v_theta = 0
-        v_psi = self.kddpsi*(psidesddot - psiddot) + self.Kpsii*self.integral_error_x + self.kdpsi*(psidesdot - psidot) + self.kppsi*(psid - psi)
+        v_psi = self.kddpsi*(psidesddot - psiddot) + self.Kpsii*self.integral_error_psi + self.kdpsi*(psidesdot - psidot) + self.kppsi*(psid - psi)
 
         V = np.array([v_x, v_y, v_z, v_thetal, v_phil, v_phi, v_theta, v_psi])
         V = V.reshape(len(V),1)
@@ -85,7 +90,7 @@ class Controller_fdbklin:
         print("Yaw torque is: {}".format(U[3]))
         print("*************************************************************************\n")
         parms = v_x, v_y, v_z, m_q,m_l,Ixx,Iyy,Izz,g,l,cable_l,K,b,Ax,Ay,Az,u2,u3,u4,vx, vy, vz,theta_l,phi_l,theta_ldot, phi_ldot, psi
-        variables = phi, theta
+        variables = 0, 0
         phi_d, theta_d = fsolve(self.equations, (variables), args=parms)
 
         return U, phi_d, theta_d

@@ -142,7 +142,7 @@ L = T[0] - V
 Fz = u1
 Thrust = sy.Matrix([0, 0, Fz])
 Drag = sy.Matrix([Ax*vx, Ay*vy, Az*vz])
-F_ext = R*Thrust-Drag
+F_ext = R*Thrust
 tau_phi = u2
 tau_theta = u3
 tau_psi = u4
@@ -256,12 +256,12 @@ for ii in range(0,mm):
 
 invA = A.inv()
 xddot = invA.dot(B)
-# print("The xddot of pendulum is: \n")
-# print(sy.simplify(xddot[0]))
-# print("The yddot of pendulum is: \n")
-# print(sy.simplify(xddot[1]))
-# print("The zddot of pendulum is: \n")
-# print(sy.simplify(xddot[2]))
+print("The xddot of quadcopter and pendulum is: \n")
+print(sy.simplify(xddot[0]))
+print("The yddot of quadcopter and pendulum is: \n")
+print(sy.simplify(xddot[1]))
+print("The zddot of quadcopter and pendulum is: \n")
+print(sy.simplify(xddot[2]))
 # print("The theta_l of pendulum is: \n")
 # print(sy.simplify(xddot[3]))
 # print("The phi_l of pendulum is: \n")
@@ -277,9 +277,9 @@ xddot_desangs = xddot[0].subs([(cos(phi), 1), (sin(phi), phi_d), (cos(theta), 1)
 yddot_desangs = xddot[1].subs([(cos(phi), 1), (sin(phi), phi_d), (cos(theta), 1), (sin(theta), theta_d)])
 zddot_desangs = xddot[2].subs([(cos(phi), 1), (sin(phi), phi_d), (cos(theta), 1), (sin(theta), theta_d)])
 
-print("The xddot of pendulum with desired roll and pitch angles is: \n")
+print("The xddot of quadcopter and pendulum with desired roll and pitch angles is: \n")
 print(sy.simplify(xddot_desangs))
-print("The yddot of pendulum with desired roll and pitch angles is: \n")
+print("The yddot of quadcopter and pendulum with desired roll and pitch angles is: \n")
 print(sy.simplify(yddot_desangs))
 print("The zddot of pendulum with desired roll and pitch angles is: \n")
 print(sy.simplify(zddot_desangs))
